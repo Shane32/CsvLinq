@@ -118,7 +118,9 @@ public sealed class CsvModelBuilder<TModel>
         if (_columns.Any(x => x.Member == member))
             throw new InvalidOperationException("This member has already been added as a column");
 
-        var column = new CsvColumnModel(name.Trim(), typeof(TValue), member);
+        var column = new CsvColumnModel(name.Trim(), typeof(TValue), member) {
+            StringValueNullable = GetStringValueNullable(typeof(TValue), member)
+        };
         AddHeader(column.Name, column);
         _columns.Add(column);
         return new CsvColumnBuilder<TModel, TValue>(this, column);
@@ -153,5 +155,23 @@ public sealed class CsvModelBuilder<TModel>
         if (Options.LineEndingReplacement == null)
             throw new InvalidOperationException("LineEndingReplacement cannot be null");
         return new CsvModel<TModel>(_columns.ToArray(), _columnLookup, _formatters, Options, _skipEmptyRows);
+    }
+
+    private static bool GetStringValueNullable(Type dataType, MemberInfo member)
+    {
+        if (dataType != typeof(string))
+            return false;
+
+#if NET6_0_OR_GREATER
+        var context = new NullabilityInfoContext();
+        var state = NullabilityState.Unknown;
+        if (member is PropertyInfo propertyInfo)
+            state = context.Create(propertyInfo).WriteState;
+        else if (member is FieldInfo fieldInfo)
+            state = context.Create(fieldInfo).WriteState;
+        return state != NullabilityState.NotNull;
+#else
+        return true;
+#endif
     }
 }

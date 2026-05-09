@@ -18,7 +18,7 @@ namespace Shane32.CsvLinq;
 public abstract class CsvContext<TModel>
     where TModel : class, new()
 {
-    private static readonly Encoding DefaultEncoding = new UTF8Encoding(false);
+    private static readonly Encoding _defaultEncoding = new UTF8Encoding(false);
 
     /// <summary>
     /// Initializes a new CSV context and builds its model configuration.
@@ -64,7 +64,7 @@ public abstract class CsvContext<TModel>
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
-        using (var reader = new StreamReader(stream, DefaultEncoding, true, 1024, true))
+        using (var reader = new StreamReader(stream, _defaultEncoding, true, 1024, true))
             return Load(reader);
     }
 
@@ -126,7 +126,7 @@ public abstract class CsvContext<TModel>
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
-        using (var reader = new StreamReader(stream, DefaultEncoding, true, 1024, true))
+        using (var reader = new StreamReader(stream, _defaultEncoding, true, 1024, true))
             return await LoadAsync(reader, cancellationToken).ConfigureAwait(false);
     }
 
@@ -184,7 +184,7 @@ public abstract class CsvContext<TModel>
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
-        using (var writer = new StreamWriter(stream, DefaultEncoding, 1024, true))
+        using (var writer = new StreamWriter(stream, _defaultEncoding, 1024, true))
             Save(writer, data);
     }
 
@@ -250,7 +250,7 @@ public abstract class CsvContext<TModel>
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
-        using (var writer = new StreamWriter(stream, DefaultEncoding, 1024, true))
+        using (var writer = new StreamWriter(stream, _defaultEncoding, 1024, true))
             await SaveAsync(writer, data, cancellationToken).ConfigureAwait(false);
     }
 
@@ -350,8 +350,26 @@ public abstract class CsvContext<TModel>
             if (column == null)
                 continue;
 
-            var value = i < fields.Count ? fields[i] : null;
+            var valueMissing = i >= fields.Count;
+            var value = valueMissing ? null : fields[i];
             if (string.IsNullOrEmpty(value)) {
+                if (column.Type == typeof(string)) {
+                    if (valueMissing) {
+                        if (!column.Optional && !column.StringValueNullable)
+                            throw new ColumnDataMissingException(column.Name, rowNumber);
+                        SetValue(item, column.Member, null);
+                        continue;
+                    }
+
+                    if (column.StringValueNullable && column.Deserializer == null && !Model.TryGetFormatter(column.Type, out _)) {
+                        SetValue(item, column.Member, null);
+                        continue;
+                    }
+
+                    SetValue(item, column.Member, DeserializeValue(value, column));
+                    continue;
+                }
+
                 if (!column.Optional)
                     throw new ColumnDataMissingException(column.Name, rowNumber);
                 continue;
@@ -536,12 +554,11 @@ public abstract class CsvContext<TModel>
     {
         value = ApplyLineEndingPolicy(value ?? string.Empty);
         var mustQuote =
-            value.IndexOf(',') >= 0 ||
-            value.IndexOf('"') >= 0 ||
-            value.IndexOf('\r') >= 0 ||
-            value.IndexOf('\n') >= 0 ||
-            value.StartsWith(" ", StringComparison.Ordinal) ||
-            value.EndsWith(" ", StringComparison.Ordinal);
+            ContainsCharacter(value, ',') ||
+            ContainsCharacter(value, '"') ||
+            ContainsCharacter(value, '\r') ||
+            ContainsCharacter(value, '\n') ||
+            value.Length > 0 && (value[0] == ' ' || value[value.Length - 1] == ' ');
 
         if (!mustQuote)
             return value;
@@ -551,7 +568,7 @@ public abstract class CsvContext<TModel>
 
     private string ApplyLineEndingPolicy(string value)
     {
-        if (value.IndexOf('\r') < 0 && value.IndexOf('\n') < 0)
+        if (!ContainsCharacter(value, '\r') && !ContainsCharacter(value, '\n'))
             return value;
 
         switch (Model.Options.LineEndingsInStrings) {
@@ -564,6 +581,15 @@ public abstract class CsvContext<TModel>
             default:
                 throw new InvalidOperationException("Unsupported line ending handling.");
         }
+    }
+
+    private static bool ContainsCharacter(string value, char character)
+    {
+#if NET6_0_OR_GREATER
+        return value.Contains(character);
+#else
+        return value.IndexOf(character) >= 0;
+#endif
     }
 
     private static object GetValue(TModel item, MemberInfo member)
