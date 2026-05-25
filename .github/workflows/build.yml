@@ -18,18 +18,12 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-        dotnet_version:
-          - 6.0.x
-          - 8.0.x
-          - 10.0.x
     uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@v2
     with:
       dotnet_folder: '.'
       dotnet_build_runner: ${{ matrix.os }}
-      dotnet_version: ${{ matrix.dotnet_version }}
-      format: 'false'
-      coveralls: ${{ matrix.os == 'ubuntu-latest' && matrix.dotnet_version == '8.0.x' }}
-    secrets:
-      NUGET_ORG_USER: ${{ secrets.NUGET_ORG_USER }}
-      NUGET_ORG_TOKEN: ${{ secrets.NUGET_ORG_TOKEN }}
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      dotnet_version: |
+        6.0.x
+        8.0.x
+        10.0.x
+      coveralls: ${{ matrix.os == 'ubuntu-latest' }}
