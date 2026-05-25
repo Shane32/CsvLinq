@@ -16,6 +16,6 @@ jobs:
       contents: write
       packages: write
     with:
-      dotnet_folder: '.'
+      dotnet_folder: src/Project
     secrets:
       NUGET_AUTH_TOKEN: ${{ secrets.NUGET_AUTH_TOKEN }}
