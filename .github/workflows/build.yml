@@ -1,36 +1,32 @@
-name: Build artifacts
-
-# ==== NOTE: do not rename this yml file or the run_number will be reset ====
+name: Build and test
 
 on:
+  pull_request:
   push:
     branches:
       - master
       - develop
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Use .NET SDK
-        uses: actions/setup-dotnet@v5
-        with:
-          global-json-file: global.json
-          source-url: https://nuget.pkg.github.com/Shane32/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Install dependencies
-        run: dotnet restore
-      - name: Build solution [Release]
-        run: dotnet build --no-restore -c Release -p:NoWarn=CS1591 -p:VersionSuffix=$GITHUB_RUN_NUMBER
-      - name: Pack solution [Release]
-        run: dotnet pack --no-restore --no-build -c Release -p:VersionSuffix=$GITHUB_RUN_NUMBER -o out
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: Nuget packages
-          path: |
-            out/*
-      - name: Publish Nuget packages to GitHub registry
-        run: dotnet nuget push "out/*" -k ${{secrets.GITHUB_TOKEN}}
+  build-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        dotnet_version:
+          - 6.0.x
+          - 8.0.x
+          - 10.0.x
+    uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@v2
+    with:
+      dotnet_folder: '.'
+      dotnet_build_runner: ${{ matrix.os }}
+      dotnet_version: ${{ matrix.dotnet_version }}
+      format: 'false'
+      coveralls: ${{ matrix.os == 'ubuntu-latest' && matrix.dotnet_version == '8.0.x' }}
+    secrets:
+      NUGET_ORG_USER: ${{ secrets.NUGET_ORG_USER }}
+      NUGET_ORG_TOKEN: ${{ secrets.NUGET_ORG_TOKEN }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
