@@ -27,4 +27,4 @@ jobs:
         8.0.x
         10.0.x
       coveralls: ${{ matrix.os == 'ubuntu-latest' }}
-      coverage_report: ${{ matrix.os == 'windows.latest' && 'false' || '' }}
+      coverage_report: ${{ matrix.os == 'windows-latest' && 'false' || '' }}
