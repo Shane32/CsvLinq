@@ -18,7 +18,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-    uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@copilot/skip-coverage-steps
+    uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@v3
     with:
       dotnet_folder: '.'
       dotnet_build_runner: ${{ matrix.os }}
