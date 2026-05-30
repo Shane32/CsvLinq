@@ -26,6 +26,5 @@ jobs:
         6.0.x
         8.0.x
         10.0.x
-      coveralls: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
+      coveralls: ${{ matrix.os == 'ubuntu-latest' }}
       data_collector: ${{ matrix.os == 'ubuntu-latest' && 'XPlat Code Coverage' || '' }}
-
