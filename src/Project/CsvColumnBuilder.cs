@@ -52,6 +52,19 @@ public sealed class CsvColumnBuilder<TModel, TValue>
     }
 
     /// <summary>
+    /// Configures whether blank field values deserialize as <see langword="null" /> for string columns.
+    /// </summary>
+    /// <param name="nullable">A value indicating whether blank string field values deserialize as <see langword="null" />.</param>
+    /// <returns>The column builder.</returns>
+    public CsvColumnBuilder<TModel, TValue> Nullable(bool nullable = true)
+    {
+        if (_column.Type != typeof(string))
+            throw new InvalidOperationException("Nullability can only be configured for string columns.");
+        _column.StringValueNullable = nullable;
+        return this;
+    }
+
+    /// <summary>
     /// Configures a deserializer for this column.
     /// </summary>
     /// <param name="deserialize">The function used to deserialize field values.</param>

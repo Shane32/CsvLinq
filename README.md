@@ -65,6 +65,11 @@ Columns are required by default.  Use `.Optional()` when a header may be missing
 matching is case-insensitive and trims surrounding whitespace, and alternate names can be defined for compatibility
 with older exports.
 
+For string columns, blank fields deserialize according to the mapped member's nullable-reference annotation on
+supported target frameworks: `string?` receives `null`, while `string` receives `string.Empty`.  When nullability
+metadata is not available, strings are treated as nullable.  Use `.Nullable()` or `.Nullable(false)` to override the
+inferred behavior.
+
 Per-column serialization can be customized:
 
 ```csharp

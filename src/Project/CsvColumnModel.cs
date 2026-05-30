@@ -41,6 +41,8 @@ public sealed class CsvColumnModel
     /// </summary>
     public bool Optional { get; internal set; }
 
+    internal bool StringValueNullable { get; set; }
+
     internal Func<string, object> Deserializer { get; set; }
 
     internal Func<object, string> Serializer { get; set; }

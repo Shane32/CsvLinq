@@ -67,6 +67,40 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void StringNullabilityOverrideControlsBlankFields()
+    {
+        var csv = "Id,NullableName,NonNullableName" + Environment.NewLine + "1,," + Environment.NewLine;
+
+        var rows = new StringNullabilityOverrideContext().Load(ToStream(csv));
+
+        Assert.IsNull(rows[0].NullableName);
+        Assert.AreEqual(string.Empty, rows[0].NonNullableName);
+    }
+
+#if NET6_0_OR_GREATER
+    [TestMethod]
+    public void StringNullabilityIsInferredFromNullableAnnotations()
+    {
+        var csv = "Id,RequiredName,OptionalName" + Environment.NewLine + "1,," + Environment.NewLine;
+
+        var rows = new InferredStringNullabilityContext().Load(ToStream(csv));
+
+        Assert.AreEqual(string.Empty, rows[0].RequiredName);
+        Assert.IsNull(rows[0].OptionalName);
+    }
+#else
+    [TestMethod]
+    public void StringNullabilityDefaultsToNullableWhenReflectionIsUnavailable()
+    {
+        var csv = "Id,Name" + Environment.NewLine + "1," + Environment.NewLine;
+
+        var rows = new UnknownStringNullabilityContext().Load(ToStream(csv));
+
+        Assert.IsNull(rows[0].Name);
+    }
+#endif
+
+    [TestMethod]
     public void DuplicateMappedHeaderThrows()
     {
         var csv = "Name,Full Name,Quantity" + Environment.NewLine + "Widgets,Widgets,52" + Environment.NewLine;
@@ -201,7 +235,7 @@ public class CsvContextTests
     }
 
     [TestMethod]
-    public async Task AsyncMethodsHonorAlreadyCanceledTokens()
+    public async Task AsyncMethodsHonorAlreadyCanceledTokensAsync()
     {
         var context = new SampleContext();
         var cancellationToken = new CancellationToken(true);
@@ -212,7 +246,7 @@ public class CsvContextTests
 
 #if NET7_0_OR_GREATER
     [TestMethod]
-    public async Task AsyncMethodsPassCancellationTokensToTextReaderAndTextWriterOnNet7OrLater()
+    public async Task AsyncMethodsPassCancellationTokensToTextReaderAndTextWriterOnNet7OrLaterAsync()
     {
         var context = new SampleContext();
         var cancellationToken = new CancellationTokenSource().Token;
@@ -326,6 +360,35 @@ public class CsvContextTests
 #endif
     }
 
+    private sealed class StringNullabilityOverrideRow
+    {
+        public int Id { get; set; }
+
+        public string NullableName { get; set; } = "initial";
+
+        public string NonNullableName { get; set; } = "initial";
+    }
+
+#if NET6_0_OR_GREATER
+#nullable enable
+    private sealed class InferredStringNullabilityRow
+    {
+        public int Id { get; set; }
+
+        public string RequiredName { get; set; } = "initial";
+
+        public string? OptionalName { get; set; } = "initial";
+    }
+#nullable restore
+#else
+    private sealed class UnknownStringNullabilityRow
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } = "initial";
+    }
+#endif
+
     private class SampleContext : CsvContext<SampleRow>
     {
         protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
@@ -345,6 +408,37 @@ public class CsvContextTests
 #endif
         }
     }
+
+    private sealed class StringNullabilityOverrideContext : CsvContext<StringNullabilityOverrideRow>
+    {
+        protected override void OnModelCreating(CsvModelBuilder<StringNullabilityOverrideRow> modelBuilder)
+        {
+            modelBuilder.Column(x => x.Id);
+            modelBuilder.Column(x => x.NullableName).Nullable();
+            modelBuilder.Column(x => x.NonNullableName).Nullable(false);
+        }
+    }
+
+#if NET6_0_OR_GREATER
+    private sealed class InferredStringNullabilityContext : CsvContext<InferredStringNullabilityRow>
+    {
+        protected override void OnModelCreating(CsvModelBuilder<InferredStringNullabilityRow> modelBuilder)
+        {
+            modelBuilder.Column(x => x.Id);
+            modelBuilder.Column(x => x.RequiredName);
+            modelBuilder.Column(x => x.OptionalName);
+        }
+    }
+#else
+    private sealed class UnknownStringNullabilityContext : CsvContext<UnknownStringNullabilityRow>
+    {
+        protected override void OnModelCreating(CsvModelBuilder<UnknownStringNullabilityRow> modelBuilder)
+        {
+            modelBuilder.Column(x => x.Id);
+            modelBuilder.Column(x => x.Name);
+        }
+    }
+#endif
 
     private sealed class NoFinalNewLineContext : SampleContext
     {
@@ -379,8 +473,17 @@ public class CsvContextTests
         {
             modelBuilder.Column(x => x.Name);
             modelBuilder.Column(x => x.Quantity)
-                .Deserialize(value => int.Parse(value.Substring(2), CultureInfo.InvariantCulture))
+                .Deserialize(DeserializeQuantity)
                 .Serialize(value => "Q-" + value);
+        }
+
+        private static int DeserializeQuantity(string value)
+        {
+#if NET7_0_OR_GREATER
+            return int.Parse(value.AsSpan(2), CultureInfo.InvariantCulture);
+#else
+            return int.Parse(value.Substring(2), CultureInfo.InvariantCulture);
+#endif
         }
     }
 
