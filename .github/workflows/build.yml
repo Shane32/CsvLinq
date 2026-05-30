@@ -8,23 +8,30 @@ on:
       - develop
 
 jobs:
-  build-check:
+  build-check-windows:
     permissions:
       contents: read
       pull-requests: write
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
     uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@v3
     with:
       dotnet_folder: '.'
-      dotnet_build_runner: ${{ matrix.os }}
+      dotnet_build_runner: windows-latest
       dotnet_version: |
         6.0.x
         8.0.x
         10.0.x
-      coveralls: ${{ matrix.os == 'ubuntu-latest' }}
-      data_collector: ${{ matrix.os == 'ubuntu-latest' && 'XPlat Code Coverage' || '' }}
+      format: false
+
+  build-check-ubuntu:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: Shane32/SharedWorkflows/.github/workflows/build-check.yml@v3
+    with:
+      dotnet_folder: '.'
+      dotnet_version: |
+        6.0.x
+        8.0.x
+        10.0.x
+      coveralls: true
+      data_collector: 'XPlat Code Coverage'
