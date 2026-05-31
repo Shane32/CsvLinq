@@ -429,7 +429,7 @@ public class CsvContextTests
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
         var context = new SampleContext();
-        var encoding = Encoding.Latin1;
+        var encoding = Encoding.GetEncoding("iso-8859-1");
         try {
             context.Save(path, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
             var rows = context.Load(path, encoding);
@@ -445,7 +445,7 @@ public class CsvContextTests
     public void SaveAndLoadStreamWithCustomEncoding()
     {
         var context = new SampleContext();
-        var encoding = Encoding.Latin1;
+        var encoding = Encoding.GetEncoding("iso-8859-1");
         var stream = new MemoryStream();
         context.Save(stream, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
         stream.Position = 0;
@@ -459,7 +459,7 @@ public class CsvContextTests
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
         var context = new SampleContext();
-        var encoding = Encoding.Latin1;
+        var encoding = Encoding.GetEncoding("iso-8859-1");
         try {
             await context.SaveAsync(path, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
             var rows = await context.LoadAsync(path, encoding);
@@ -475,7 +475,7 @@ public class CsvContextTests
     public async Task SaveAndLoadStreamWithCustomEncodingAsync()
     {
         var context = new SampleContext();
-        var encoding = Encoding.Latin1;
+        var encoding = Encoding.GetEncoding("iso-8859-1");
         var stream = new MemoryStream();
         await context.SaveAsync(stream, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
         stream.Position = 0;
