@@ -671,7 +671,12 @@ public class CsvContextTests
             ",HalfValue,AvailableOn,StartsAt" +
 #endif
             Environment.NewLine +
-            "Widgets,f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,Yes,pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
+            "Widgets,f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.345,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,True,Pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
+#if NET6_0_OR_GREATER
+            ",1.5,2024-05-09,13:45:12.3450000" +
+#endif
+            Environment.NewLine +
+            "Gadgets,6b4fef27-a72f-4e25-9678-c89fd43f86a7,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,Yes,pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
 #if NET6_0_OR_GREATER
             ",1.5,2024-05-09,13:45:12.3450000" +
 #endif
@@ -679,7 +684,7 @@ public class CsvContextTests
 
         var rows = new NativeTypesContext().Load(new StringReader(csv));
 
-        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual(2, rows.Count);
         Assert.AreEqual("Widgets", rows[0].Name);
         Assert.AreEqual(Guid.Parse("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8"), rows[0].Token);
         Assert.AreEqual(DateTimeKind.Unspecified, rows[0].HappenedAt.Kind);
@@ -705,6 +710,13 @@ public class CsvContextTests
         Assert.AreEqual(new DateOnly(2024, 5, 9), rows[0].AvailableOn);
         Assert.AreEqual(new TimeOnly(13, 45, 12, 345), rows[0].StartsAt);
 #endif
+
+        Assert.AreEqual("Gadgets", rows[1].Name);
+        Assert.AreEqual(Guid.Parse("6b4fef27-a72f-4e25-9678-c89fd43f86a7"), rows[1].Token);
+        Assert.AreEqual(DateTimeKind.Unspecified, rows[1].HappenedAt.Kind);
+        Assert.AreEqual(new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Unspecified), rows[1].HappenedAt);
+        Assert.AreEqual(true, rows[1].Enabled);
+        Assert.AreEqual(NativeTypesState.Pending, rows[1].State);
     }
 
 #if NET7_0_OR_GREATER
