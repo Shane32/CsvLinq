@@ -32,7 +32,10 @@ public sealed class CsvModel<TModel>
     /// </summary>
     public IReadOnlyList<CsvColumnModel> Columns { get; }
 
-    internal CsvOptions Options { get; }
+    /// <summary>
+    /// Gets CSV formatting and parsing options.
+    /// </summary>
+    public CsvOptions Options { get; }
 
     /// <summary>
     /// Gets a value indicating whether empty rows are skipped when loading CSV data.
