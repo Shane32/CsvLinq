@@ -61,7 +61,35 @@ await csv.SaveAsync("invoice-out.csv", rows);
 
 ## Configuration
 
-Columns are required by default.  Use `.Optional()` when a header may be missing or a field may be blank.  Header
+`CsvModelBuilder<TModel>` and `CsvColumnBuilder<TModel, TValue>` are fluent builders. Configure your mappings inside
+`OnModelCreating`, then let `CsvContext<TModel>` handle load/save operations.
+
+### `CsvModelBuilder<TModel>` methods
+
+| Method | Description |
+| --- | --- |
+| `.LineEnding(string lineEnding)` | Sets the line ending used when writing CSV (`\r\n`, `\n`, etc.). |
+| `.LineEndingsInStrings(CsvLineEndingHandling handling)` | Controls how line endings inside field values are handled when writing. |
+| `.LineEndingReplacement(string replacement)` | Sets replacement text used when string line endings are replaced. |
+| `.EndsWithNewLine(bool endsWithNewLine)` | Controls whether output ends with a trailing line ending. |
+| `.OmitHeaderRow()` | Configures reading/writing CSV with no header row. |
+| `.SkipEmptyRows()` | Skips completely empty rows when loading CSV. |
+| `.Column<TValue>(Expression<Func<TModel, TValue>> memberAccessor)` | Maps a field/property using the member name as the column header. |
+| `.Column<TValue>(Expression<Func<TModel, TValue>> memberAccessor, string name)` | Maps a field/property using an explicit column header name. |
+| `.Format<TValue>(Func<string, TValue> deserialize, Func<TValue, string> serialize)` | Registers a type-wide formatter used by all mapped columns of that type. |
+
+### `CsvColumnBuilder<TModel, TValue>` methods
+
+| Method | Description |
+| --- | --- |
+| `.AlternateName(string name)` | Adds an additional accepted header name (read-time alias). |
+| `.Optional()` | Marks the column as optional when loading. |
+| `.Required()` | Marks the column as required when loading. |
+| `.Nullable(bool nullable = true)` | For `string` columns, controls whether blank field values deserialize as `null`. |
+| `.Deserialize(Func<string, TValue> deserialize)` | Sets a column-specific deserializer. |
+| `.Serialize(Func<TValue, string> serialize)` | Sets a column-specific serializer. |
+
+Columns are required by default. Use `.Optional()` when a header may be missing or a field may be blank. Header
 matching is case-insensitive and trims surrounding whitespace, and alternate names can be defined for compatibility
 with older exports.
 
@@ -102,20 +130,33 @@ builder.Format<decimal>(
     value => "$" + value.ToString("0.00", CultureInfo.InvariantCulture));
 ```
 
-CSV options include delimiter, output line ending, final newline behavior, encoding, and how line endings inside
-quoted fields are handled:
+CSV output options can be configured directly on the model builder:
 
 ```csharp
-builder.Configure(options => {
-    options.LineEnding = "\r\n";
-    options.EndsWithNewLine = true;
-    options.LineEndingsInStrings = CsvLineEndingHandling.Replace;
-    options.LineEndingReplacement = " ";
-});
+builder.LineEnding("\r\n")
+    .EndsWithNewLine(true)
+    .LineEndingsInStrings(CsvLineEndingHandling.Replace)
+    .LineEndingReplacement(" ");
 ```
 
-For deeper customization, override `OnReadFile`, `OnReadRow`, `OnWriteFile`, `OnWriteRow`, `DefaultDeserialize`, or
-`DefaultSerialize` in your derived context.
+## Advanced customization
+
+For advanced scenarios, `CsvContext<TModel>` exposes protected methods you can override:
+
+| Method | Description |
+| --- | --- |
+| `OnModelCreating(CsvModelBuilder<TModel> modelBuilder)` | Builds the model mapping (required override). |
+| `OnReadFile(TextReader reader)` | Customizes how an entire CSV document is read synchronously. |
+| `OnReadFileAsync(TextReader reader, CancellationToken cancellationToken = default)` | Customizes how an entire CSV document is read asynchronously. |
+| `OnReadRow(IReadOnlyList<string> fields, int rowNumber, CsvColumnModel[] columnMapping)` | Customizes conversion of one parsed record into a row model. |
+| `OnWriteFile(TextWriter writer, IEnumerable<TModel> data)` | Customizes how a full CSV document is written synchronously. |
+| `OnWriteFileAsync(TextWriter writer, IEnumerable<TModel> data, CancellationToken cancellationToken = default)` | Customizes how a full CSV document is written asynchronously. |
+| `OnWriteRow(TModel data)` | Customizes conversion of one row model into CSV field values. |
+| `DefaultDeserialize(string value, Type dataType)` | Overrides built-in type conversion for reading values. |
+| `DefaultSerialize(object value, Type dataType)` | Overrides built-in type conversion for writing values. |
+
+Most applications only need `OnModelCreating`; override the other methods when you need custom parsing/writing
+pipelines or conversion behavior.
 
 ## Credits
 
