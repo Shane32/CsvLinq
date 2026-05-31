@@ -165,7 +165,7 @@ public sealed class CsvModelBuilder<TModel>
             throw new InvalidOperationException("LineEnding cannot be empty");
         if (Options.LineEndingReplacement == null)
             throw new InvalidOperationException("LineEndingReplacement cannot be null");
-        return new CsvModel<TModel>(_columns.ToArray(), _columnLookup, _formatters, Options, _skipEmptyRows);
+        return new CsvModel<TModel>(_columns.ToArray(), _columnLookup, _formatters, Options with { }, _skipEmptyRows);
     }
 
     private static bool GetStringValueNullable(Type dataType, MemberInfo member)

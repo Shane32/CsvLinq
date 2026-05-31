@@ -5,7 +5,7 @@ namespace Shane32.CsvLinq;
 /// <summary>
 /// Defines CSV formatting and parsing options.
 /// </summary>
-public sealed class CsvOptions
+public sealed record class CsvOptions
 {
     /// <summary>
     /// Gets or sets the line ending used when writing CSV records.
