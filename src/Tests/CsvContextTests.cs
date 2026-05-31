@@ -89,6 +89,21 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void BuildCopiesOptions()
+    {
+        var builder = new CsvModelBuilder<SampleRow>();
+        builder.LineEnding("\r\n");
+        builder.EndsWithNewLine(false);
+        var model = builder.Build();
+
+        builder.LineEnding("\n");
+        builder.EndsWithNewLine(true);
+
+        Assert.AreEqual("\r\n", model.Options.LineEnding);
+        Assert.IsFalse(model.Options.EndsWithNewLine);
+    }
+
+    [TestMethod]
     public void MissingRequiredColumnThrows()
     {
         var csv = "Name" + Environment.NewLine + "Widgets" + Environment.NewLine;
