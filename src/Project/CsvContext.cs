@@ -19,14 +19,14 @@ public abstract class CsvContext<TModel>
     where TModel : class, new()
 {
     private static readonly Encoding _defaultEncoding = new UTF8Encoding(false);
-    private readonly Lazy<CsvModel<TModel>> _model;
+    private readonly object _modelLock = new object();
+    private CsvModel<TModel> _model;
 
     /// <summary>
     /// Initializes a new CSV context and builds its model configuration.
     /// </summary>
     protected CsvContext()
     {
-        _model = new Lazy<CsvModel<TModel>>(BuildModel);
     }
 
     /// <summary>
@@ -35,15 +35,23 @@ public abstract class CsvContext<TModel>
     /// <param name="model">The model configuration used by this context.</param>
     protected CsvContext(CsvModel<TModel> model)
     {
-        if (model == null)
-            throw new ArgumentNullException(nameof(model));
-        _model = new Lazy<CsvModel<TModel>>(() => model);
+        _model = model ?? throw new ArgumentNullException(nameof(model));
     }
 
     /// <summary>
     /// Gets the model configuration used by this context.
     /// </summary>
-    public CsvModel<TModel> Model => _model.Value;
+    public CsvModel<TModel> Model
+    {
+        get
+        {
+            if (_model != null)
+                return _model;
+            lock (_modelLock) {
+                return _model ??= BuildModel();
+            }
+        }
+    }
 
     /// <summary>
     /// Configures the columns, options, and formatters used by this context.
