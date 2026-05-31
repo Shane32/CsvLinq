@@ -158,7 +158,7 @@ public sealed class CsvModelBuilder<TModel>
     }
 
     /// <summary>
-    /// Builds and returns the configured CSV model.
+    /// Builds and returns a <see cref="CsvModel{TModel}" /> using the columns, formatters, and options configured on this builder.
     /// </summary>
     /// <returns>The configured CSV model.</returns>
     public CsvModel<TModel> Build()
