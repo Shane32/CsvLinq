@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Shane32.CsvLinq;
 
@@ -23,6 +24,8 @@ public sealed class CsvModel<TModel>
         Columns = columns;
         _columnLookup = new Dictionary<string, CsvColumnModel>(columnLookup, StringComparer.OrdinalIgnoreCase);
         _formatters = new Dictionary<Type, ICsvFormatter>(formatters);
+        ColumnLookup = new ReadOnlyDictionary<string, CsvColumnModel>(_columnLookup);
+        Formatters = new ReadOnlyDictionary<Type, ICsvFormatter>(_formatters);
         Options = options;
         SkipEmptyRows = skipEmptyRows;
     }
@@ -31,6 +34,16 @@ public sealed class CsvModel<TModel>
     /// Gets the configured CSV columns.
     /// </summary>
     public IReadOnlyList<CsvColumnModel> Columns { get; }
+
+    /// <summary>
+    /// Gets the configured columns by header name.
+    /// </summary>
+    public IReadOnlyDictionary<string, CsvColumnModel> ColumnLookup { get; }
+
+    /// <summary>
+    /// Gets the configured formatters by model type.
+    /// </summary>
+    public IReadOnlyDictionary<Type, ICsvFormatter> Formatters { get; }
 
     /// <summary>
     /// Gets CSV formatting and parsing options.
@@ -51,7 +64,13 @@ public sealed class CsvModel<TModel>
     public bool TryGetColumn(string headerName, out CsvColumnModel column)
         => _columnLookup.TryGetValue((headerName ?? string.Empty).Trim(), out column);
 
-    internal bool TryGetFormatter(Type type, out ICsvFormatter formatter)
+    /// <summary>
+    /// Tries to find a configured formatter by model type.
+    /// </summary>
+    /// <param name="type">The model type.</param>
+    /// <param name="formatter">When this method returns, contains the matching formatter when found.</param>
+    /// <returns><see langword="true" /> when a matching formatter is found; otherwise, <see langword="false" />.</returns>
+    public bool TryGetFormatter(Type type, out ICsvFormatter formatter)
     {
         var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
         return _formatters.TryGetValue(effectiveType, out formatter);
