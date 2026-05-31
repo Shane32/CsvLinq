@@ -708,8 +708,27 @@ public class CsvContextTests
         Assert.AreEqual(Guid.Parse("6b4fef27-a72f-4e25-9678-c89fd43f86a7"), rows[1].Token);
         Assert.AreEqual(DateTimeKind.Unspecified, rows[1].HappenedAt.Kind);
         Assert.AreEqual(new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Unspecified), rows[1].HappenedAt);
+        Assert.AreEqual(new DateTimeOffset(2024, 5, 8, 13, 45, 12, 345, TimeSpan.FromHours(-7)), rows[1].HappenedAtOffset);
+        Assert.AreEqual(new TimeSpan(1, 2, 3, 4, 500), rows[1].Duration);
+        Assert.AreEqual(new Uri("https://example.com/items/42"), rows[1].Link);
         Assert.AreEqual(true, rows[1].Enabled);
         Assert.AreEqual(NativeTypesState.Pending, rows[1].State);
+        Assert.AreEqual((byte)200, rows[1].ByteValue);
+        Assert.AreEqual((sbyte)-100, rows[1].SByteValue);
+        Assert.AreEqual((short)-12345, rows[1].ShortValue);
+        Assert.AreEqual((ushort)54321, rows[1].UShortValue);
+        Assert.AreEqual(-2000000000, rows[1].IntValue);
+        Assert.AreEqual(4000000000U, rows[1].UIntValue);
+        Assert.AreEqual(-9000000000000000000L, rows[1].LongValue);
+        Assert.AreEqual(18000000000000000000UL, rows[1].ULongValue);
+        Assert.AreEqual(3.5f, rows[1].SingleValue);
+        Assert.AreEqual(-12345.25d, rows[1].DoubleValue);
+        Assert.AreEqual(45.99m, rows[1].DecimalValue);
+#if NET6_0_OR_GREATER
+        Assert.AreEqual((Half)1.5f, rows[1].HalfValue);
+        Assert.AreEqual(new DateOnly(2024, 5, 9), rows[1].AvailableOn);
+        Assert.AreEqual(new TimeOnly(13, 45, 12, 345), rows[1].StartsAt);
+#endif
     }
 
 #if NET7_0_OR_GREATER
