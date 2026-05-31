@@ -590,7 +590,7 @@ public abstract class CsvContext<TModel>
         if (dataType == typeof(string))
             return value;
         if (dataType == typeof(DateTime))
-            return DateTime.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+            return DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind).DateTime;
         if (dataType == typeof(DateTimeOffset))
             return DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 #if NET6_0_OR_GREATER
@@ -598,6 +598,8 @@ public abstract class CsvContext<TModel>
             return DateOnly.ParseExact(value, "O", CultureInfo.InvariantCulture);
         if (dataType == typeof(TimeOnly))
             return TimeOnly.ParseExact(value, "O", CultureInfo.InvariantCulture);
+        if (dataType == typeof(Half))
+            return Half.Parse(value, CultureInfo.InvariantCulture);
 #endif
         if (dataType == typeof(TimeSpan))
             return TimeSpan.Parse(value, CultureInfo.InvariantCulture);
@@ -629,7 +631,7 @@ public abstract class CsvContext<TModel>
             dataType = underlyingType;
 
         if (dataType == typeof(DateTime))
-            return ((DateTime)value).ToString("O", CultureInfo.InvariantCulture);
+            return ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture);
         if (dataType == typeof(DateTimeOffset))
             return ((DateTimeOffset)value).ToString("O", CultureInfo.InvariantCulture);
 #if NET6_0_OR_GREATER
