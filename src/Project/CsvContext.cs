@@ -41,10 +41,8 @@ public abstract class CsvContext<TModel>
     /// <summary>
     /// Gets the model configuration used by this context.
     /// </summary>
-    public CsvModel<TModel> Model
-    {
-        get
-        {
+    public CsvModel<TModel> Model {
+        get {
             lock (_modelLock) {
                 return _model ??= BuildModel();
             }
