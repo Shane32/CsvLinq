@@ -66,6 +66,19 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void DefaultConstructorLazilyInitializesModel()
+    {
+        var context = new LazyModelInitializationContext();
+
+        Assert.AreEqual(0, context.OnModelCreatingCallCount);
+
+        _ = context.Model;
+        _ = context.Model;
+
+        Assert.AreEqual(1, context.OnModelCreatingCallCount);
+    }
+
+    [TestMethod]
     public void MissingRequiredColumnThrows()
     {
         var csv = "Name" + Environment.NewLine + "Widgets" + Environment.NewLine;
@@ -775,6 +788,26 @@ public class CsvContextTests
 
         protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
             => throw new AssertFailedException("OnModelCreating should not be called.");
+    }
+
+    private sealed class LazyModelInitializationContext : CsvContext<SampleRow>
+    {
+        public bool ConstructorCompleted { get; private set; }
+
+        public int OnModelCreatingCallCount { get; private set; }
+
+        public LazyModelInitializationContext()
+        {
+            ConstructorCompleted = true;
+        }
+
+        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        {
+            OnModelCreatingCallCount++;
+            if (!ConstructorCompleted)
+                throw new AssertFailedException("OnModelCreating should be called lazily.");
+            modelBuilder.Column(x => x.Name);
+        }
     }
 
     private sealed class TypeFormatterContext : CsvContext<SampleRow>

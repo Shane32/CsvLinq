@@ -19,15 +19,14 @@ public abstract class CsvContext<TModel>
     where TModel : class, new()
 {
     private static readonly Encoding _defaultEncoding = new UTF8Encoding(false);
+    private readonly object _modelLock = new object();
+    private CsvModel<TModel> _model;
 
     /// <summary>
     /// Initializes a new CSV context and builds its model configuration.
     /// </summary>
     protected CsvContext()
     {
-        var builder = new CsvModelBuilder<TModel>();
-        OnModelCreating(builder);
-        Model = builder.Build();
     }
 
     /// <summary>
@@ -36,19 +35,32 @@ public abstract class CsvContext<TModel>
     /// <param name="model">The model configuration used by this context.</param>
     protected CsvContext(CsvModel<TModel> model)
     {
-        Model = model ?? throw new ArgumentNullException(nameof(model));
+        _model = model ?? throw new ArgumentNullException(nameof(model));
     }
 
     /// <summary>
     /// Gets the model configuration used by this context.
     /// </summary>
-    public CsvModel<TModel> Model { get; }
+    public CsvModel<TModel> Model {
+        get {
+            lock (_modelLock) {
+                return _model ??= BuildModel();
+            }
+        }
+    }
 
     /// <summary>
     /// Configures the columns, options, and formatters used by this context.
     /// </summary>
     /// <param name="modelBuilder">The model builder to configure.</param>
     protected abstract void OnModelCreating(CsvModelBuilder<TModel> modelBuilder);
+
+    private CsvModel<TModel> BuildModel()
+    {
+        var builder = new CsvModelBuilder<TModel>();
+        OnModelCreating(builder);
+        return builder.Build();
+    }
 
     /// <summary>
     /// Loads CSV rows from a file.
