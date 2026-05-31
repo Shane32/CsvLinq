@@ -26,4 +26,9 @@ internal sealed class CsvOptions
     /// Gets or sets a value indicating whether written CSV data ends with a final line ending.
     /// </summary>
     public bool EndsWithNewLine { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether CSV data includes a header row.
+    /// </summary>
+    public bool HasHeaderRow { get; set; } = true;
 }

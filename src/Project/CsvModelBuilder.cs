@@ -65,6 +65,17 @@ public sealed class CsvModelBuilder<TModel>
     }
 
     /// <summary>
+    /// Configures the model to read and write CSV data without a header row.
+    /// Empty CSV input then yields zero rows instead of throwing <see cref="CsvEmptyException" />.
+    /// </summary>
+    /// <returns>The model builder.</returns>
+    public CsvModelBuilder<TModel> OmitHeaderRow()
+    {
+        Options.HasHeaderRow = false;
+        return this;
+    }
+
+    /// <summary>
     /// Configures the model to skip empty rows when loading CSV data.
     /// </summary>
     /// <returns>The model builder.</returns>
