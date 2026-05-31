@@ -79,6 +79,16 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void ModelExposesConfiguredOptions()
+    {
+        var options = new NoFinalNewLineContext().Model.Options;
+
+        Assert.IsNotNull(options);
+        Assert.IsFalse(options.EndsWithNewLine);
+        Assert.IsTrue(options.HasHeaderRow);
+    }
+
+    [TestMethod]
     public void MissingRequiredColumnThrows()
     {
         var csv = "Name" + Environment.NewLine + "Widgets" + Environment.NewLine;
