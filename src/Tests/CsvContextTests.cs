@@ -109,6 +109,151 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void SaveDoesNotQuoteFieldsThatDontNeedEncoding()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> {
+            new SampleRow { Name = "Widgets", Quantity = 1 },
+            new SampleRow { Name = "plain text", Quantity = 2 },
+            new SampleRow { Name = "123", Quantity = 3 },
+        };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        // Fields that don't need encoding should not be quoted
+        Assert.IsFalse(csv.Contains("\"Widgets\""), "Simple field should not be quoted");
+        Assert.IsFalse(csv.Contains("\"plain text\""), "Field with internal space should not be quoted");
+        Assert.IsFalse(csv.Contains("\"123\""), "Numeric string should not be quoted");
+        // Verify the plain values do appear
+        StringAssert.Contains(csv, "Widgets");
+        StringAssert.Contains(csv, "plain text");
+        StringAssert.Contains(csv, "123");
+    }
+
+    [TestMethod]
+    public void SaveQuotesFieldsContainingCommas()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> { new SampleRow { Name = "Widgets, Inc.", Quantity = 1 } };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "\"Widgets, Inc.\"");
+    }
+
+    [TestMethod]
+    public void SaveQuotesAndEscapesFieldsContainingDoubleQuotes()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> { new SampleRow { Name = "say \"hello\"", Quantity = 1 } };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "\"say \"\"hello\"\"\"");
+    }
+
+    [TestMethod]
+    public void SaveQuotesFieldsContainingNewlines()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> {
+            new SampleRow { Name = "Widgets", Quantity = 1, Notes = "line1\r\nline2" }
+        };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "\"line1\r\nline2\"");
+    }
+
+    [TestMethod]
+    public void SaveQuotesFieldsContainingLfNewlines()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> {
+            new SampleRow { Name = "Widgets", Quantity = 1, Notes = "line1\nline2" }
+        };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "\"line1\nline2\"");
+    }
+
+    [TestMethod]
+    public void SaveQuotesFieldsWithLeadingOrTrailingSpaces()
+    {
+        var context = new SampleContext();
+        var rows = new List<SampleRow> {
+            new SampleRow { Name = " leading", Quantity = 1 },
+            new SampleRow { Name = "trailing ", Quantity = 2 },
+        };
+
+        var stream = new MemoryStream();
+        context.Save(stream, rows);
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "\" leading\"");
+        StringAssert.Contains(csv, "\"trailing \"");
+    }
+
+    [TestMethod]
+    public void SaveAndLoadRoundTripsFieldsWithCommas()
+    {
+        var context = new SampleContext();
+        var original = new SampleRow { Name = "A, B, C", Quantity = 5 };
+
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { original });
+        stream.Position = 0;
+        var rows = context.Load(stream);
+
+        Assert.AreEqual(original.Name, rows[0].Name);
+    }
+
+    [TestMethod]
+    public void SaveAndLoadRoundTripsFieldsWithDoubleQuotes()
+    {
+        var context = new SampleContext();
+        var original = new SampleRow { Name = "He said \"hello\"", Quantity = 5 };
+
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { original });
+        stream.Position = 0;
+        var rows = context.Load(stream);
+
+        Assert.AreEqual(original.Name, rows[0].Name);
+    }
+
+    [TestMethod]
+    public void SaveAndLoadRoundTripsFieldsWithEmbeddedNewlines()
+    {
+        var context = new SampleContext();
+        var original = new SampleRow { Name = "Widgets", Quantity = 1, Notes = "first\r\nsecond" };
+
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { original });
+        stream.Position = 0;
+        var rows = context.Load(stream);
+
+        Assert.AreEqual(original.Notes, rows[0].Notes);
+    }
+
+    [TestMethod]
     public void SaveEscapesAndRoundTripsCsvFields()
     {
         var context = new SampleContext();
@@ -245,6 +390,98 @@ public class CsvContextTests
             if (File.Exists(path))
                 File.Delete(path);
         }
+    }
+
+    [TestMethod]
+    public void DefaultFileEncodingIsUtf8WithoutBom()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
+        var context = new SampleContext();
+        try {
+            context.Save(path, new[] { new SampleRow { Name = "Widgets", Quantity = 2 } });
+            var bytes = File.ReadAllBytes(path);
+            // UTF-8 BOM is EF BB BF; assert the file does not start with a BOM
+            Assert.IsTrue(bytes.Length >= 3, "File should contain data");
+            Assert.IsFalse(bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "File should not have UTF-8 BOM");
+            // Verify it is valid UTF-8
+            var text = Encoding.UTF8.GetString(bytes);
+            StringAssert.Contains(text, "Widgets");
+        } finally {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void DefaultStreamEncodingIsUtf8WithoutBom()
+    {
+        var context = new SampleContext();
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { new SampleRow { Name = "Widgets", Quantity = 2 } });
+        var bytes = stream.ToArray();
+        // UTF-8 BOM is EF BB BF; assert the stream does not start with a BOM
+        Assert.IsTrue(bytes.Length >= 3, "Stream should contain data");
+        Assert.IsFalse(bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, "Stream should not have UTF-8 BOM");
+    }
+
+    [TestMethod]
+    public void SaveAndLoadFileWithCustomEncoding()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
+        var context = new SampleContext();
+        var encoding = Encoding.GetEncoding("iso-8859-1");
+        try {
+            context.Save(path, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
+            var rows = context.Load(path, encoding);
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual("caf\u00e9", rows[0].Name);
+        } finally {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void SaveAndLoadStreamWithCustomEncoding()
+    {
+        var context = new SampleContext();
+        var encoding = Encoding.GetEncoding("iso-8859-1");
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
+        stream.Position = 0;
+        var rows = context.Load(stream, encoding);
+        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual("caf\u00e9", rows[0].Name);
+    }
+
+    [TestMethod]
+    public async Task SaveAndLoadFileWithCustomEncodingAsync()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".csv");
+        var context = new SampleContext();
+        var encoding = Encoding.GetEncoding("iso-8859-1");
+        try {
+            await context.SaveAsync(path, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
+            var rows = await context.LoadAsync(path, encoding);
+            Assert.AreEqual(1, rows.Count);
+            Assert.AreEqual("caf\u00e9", rows[0].Name);
+        } finally {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public async Task SaveAndLoadStreamWithCustomEncodingAsync()
+    {
+        var context = new SampleContext();
+        var encoding = Encoding.GetEncoding("iso-8859-1");
+        var stream = new MemoryStream();
+        await context.SaveAsync(stream, new[] { new SampleRow { Name = "caf\u00e9", Quantity = 3 } }, encoding);
+        stream.Position = 0;
+        var rows = await context.LoadAsync(stream, encoding);
+        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual("caf\u00e9", rows[0].Name);
     }
 
     [TestMethod]

@@ -56,6 +56,21 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Loads CSV rows from a file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="encoding">The character encoding to use when reading the file.</param>
+    /// <returns>The loaded row models.</returns>
+    public virtual List<TModel> Load(string filename, Encoding encoding)
+    {
+        if (filename == null)
+            throw new ArgumentNullException(nameof(filename));
+        using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+            return Load(stream, encoding);
+        }
+    }
+
+    /// <summary>
     /// Loads CSV rows from a stream.
     /// </summary>
     /// <param name="stream">The stream containing CSV data.</param>
@@ -65,6 +80,20 @@ public abstract class CsvContext<TModel>
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
         using (var reader = new StreamReader(stream, _defaultEncoding, true, 1024, true))
+            return Load(reader);
+    }
+
+    /// <summary>
+    /// Loads CSV rows from a stream using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream containing CSV data.</param>
+    /// <param name="encoding">The character encoding to use when reading the stream.</param>
+    /// <returns>The loaded row models.</returns>
+    public virtual List<TModel> Load(Stream stream, Encoding encoding)
+    {
+        if (stream == null)
+            throw new ArgumentNullException(nameof(stream));
+        using (var reader = new StreamReader(stream, encoding ?? _defaultEncoding, true, 1024, true))
             return Load(reader);
     }
 
@@ -107,6 +136,34 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Asynchronously loads CSV rows from a file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="encoding">The character encoding to use when reading the file.</param>
+    /// <returns>A task that returns the loaded row models.</returns>
+    public virtual async Task<List<TModel>> LoadAsync(string filename, Encoding encoding)
+    {
+        return await LoadAsync(filename, encoding, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously loads CSV rows from a file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="encoding">The character encoding to use when reading the file.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that returns the loaded row models.</returns>
+    public virtual async Task<List<TModel>> LoadAsync(string filename, Encoding encoding, CancellationToken cancellationToken)
+    {
+        if (filename == null)
+            throw new ArgumentNullException(nameof(filename));
+        cancellationToken.ThrowIfCancellationRequested();
+        using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true)) {
+            return await LoadAsync(stream, encoding, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Asynchronously loads CSV rows from a stream.
     /// </summary>
     /// <param name="stream">The stream containing CSV data.</param>
@@ -127,6 +184,32 @@ public abstract class CsvContext<TModel>
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
         using (var reader = new StreamReader(stream, _defaultEncoding, true, 1024, true))
+            return await LoadAsync(reader, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously loads CSV rows from a stream using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream containing CSV data.</param>
+    /// <param name="encoding">The character encoding to use when reading the stream.</param>
+    /// <returns>A task that returns the loaded row models.</returns>
+    public virtual async Task<List<TModel>> LoadAsync(Stream stream, Encoding encoding)
+    {
+        return await LoadAsync(stream, encoding, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously loads CSV rows from a stream using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream containing CSV data.</param>
+    /// <param name="encoding">The character encoding to use when reading the stream.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that returns the loaded row models.</returns>
+    public virtual async Task<List<TModel>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
+    {
+        if (stream == null)
+            throw new ArgumentNullException(nameof(stream));
+        using (var reader = new StreamReader(stream, encoding ?? _defaultEncoding, true, 1024, true))
             return await LoadAsync(reader, cancellationToken).ConfigureAwait(false);
     }
 
@@ -176,6 +259,21 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Saves row models to a CSV file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the file.</param>
+    public virtual void Save(string filename, IEnumerable<TModel> data, Encoding encoding)
+    {
+        if (filename == null)
+            throw new ArgumentNullException(nameof(filename));
+        using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None)) {
+            Save(stream, data, encoding);
+        }
+    }
+
+    /// <summary>
     /// Saves row models to a stream as CSV data.
     /// </summary>
     /// <param name="stream">The stream to write CSV data to.</param>
@@ -185,6 +283,20 @@ public abstract class CsvContext<TModel>
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
         using (var writer = new StreamWriter(stream, _defaultEncoding, 1024, true))
+            Save(writer, data);
+    }
+
+    /// <summary>
+    /// Saves row models to a stream as CSV data using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream to write CSV data to.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the stream.</param>
+    public virtual void Save(Stream stream, IEnumerable<TModel> data, Encoding encoding)
+    {
+        if (stream == null)
+            throw new ArgumentNullException(nameof(stream));
+        using (var writer = new StreamWriter(stream, encoding ?? _defaultEncoding, 1024, true))
             Save(writer, data);
     }
 
@@ -229,6 +341,36 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Asynchronously saves row models to a CSV file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the file.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, Encoding encoding)
+    {
+        await SaveAsync(filename, data, encoding, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously saves row models to a CSV file using the specified encoding.
+    /// </summary>
+    /// <param name="filename">The path to the CSV file.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the file.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken)
+    {
+        if (filename == null)
+            throw new ArgumentNullException(nameof(filename));
+        cancellationToken.ThrowIfCancellationRequested();
+        using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true)) {
+            await SaveAsync(stream, data, encoding, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Asynchronously saves row models to a stream as CSV data.
     /// </summary>
     /// <param name="stream">The stream to write CSV data to.</param>
@@ -251,6 +393,34 @@ public abstract class CsvContext<TModel>
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
         using (var writer = new StreamWriter(stream, _defaultEncoding, 1024, true))
+            await SaveAsync(writer, data, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously saves row models to a stream as CSV data using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream to write CSV data to.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the stream.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, Encoding encoding)
+    {
+        await SaveAsync(stream, data, encoding, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously saves row models to a stream as CSV data using the specified encoding.
+    /// </summary>
+    /// <param name="stream">The stream to write CSV data to.</param>
+    /// <param name="data">The row models to save.</param>
+    /// <param name="encoding">The character encoding to use when writing the stream.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken)
+    {
+        if (stream == null)
+            throw new ArgumentNullException(nameof(stream));
+        using (var writer = new StreamWriter(stream, encoding ?? _defaultEncoding, 1024, true))
             await SaveAsync(writer, data, cancellationToken).ConfigureAwait(false);
     }
 
