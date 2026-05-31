@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,9 +29,9 @@ public class CsvParserTests
 
         Assert.AreEqual(2, records.Count);
         Assert.AreEqual(1, records[0].RowNumber);
-        CollectionAssert.AreEqual(new[] { "a", "b" }, ToArray(records[0]));
+        AssertFields(records[0], "a", "b");
         Assert.AreEqual(2, records[1].RowNumber);
-        CollectionAssert.AreEqual(new[] { "c", "d" }, ToArray(records[1]));
+        AssertFields(records[1], "c", "d");
     }
 
     [TestMethod]
@@ -41,7 +40,7 @@ public class CsvParserTests
         var records = CsvParser.Parse("a,b\r\n", NewOptions());
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a", "b" }, ToArray(records[0]));
+        AssertFields(records[0], "a", "b");
     }
 
     [TestMethod]
@@ -50,7 +49,7 @@ public class CsvParserTests
         var records = CsvParser.Parse("\"a\"\"b\",\"c,d\"", NewOptions());
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a\"b", "c,d" }, ToArray(records[0]));
+        AssertFields(records[0], "a\"b", "c,d");
     }
 
     [TestMethod]
@@ -59,7 +58,7 @@ public class CsvParserTests
         var records = CsvParser.Parse("ab\"cd", NewOptions());
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "ab\"cd" }, ToArray(records[0]));
+        AssertFields(records[0], "ab\"cd");
     }
 
     [TestMethod]
@@ -74,7 +73,7 @@ public class CsvParserTests
         var records = CsvParser.Parse("\"a\r\nb\",x", NewOptions(CsvLineEndingHandling.Allow));
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a\r\nb", "x" }, ToArray(records[0]));
+        AssertFields(records[0], "a\r\nb", "x");
     }
 
     [TestMethod]
@@ -83,7 +82,7 @@ public class CsvParserTests
         var records = CsvParser.Parse("\"a\r\nb\nc\",x", NewOptions(CsvLineEndingHandling.Replace, "|"));
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a|b|c", "x" }, ToArray(records[0]));
+        AssertFields(records[0], "a|b|c", "x");
     }
 
     [TestMethod]
@@ -102,13 +101,13 @@ public class CsvParserTests
     }
 
     [TestMethod]
-    public async Task ParseAsyncThrowsWhenReaderIsNull()
+    public async Task ParseAsyncThrowsWhenReaderIsNullAsync()
     {
         await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => CsvParser.ParseAsync(null!, NewOptions()));
     }
 
     [TestMethod]
-    public async Task ParseAsyncReturnsEmptyWhenReaderHasNoCharacters()
+    public async Task ParseAsyncReturnsEmptyWhenReaderHasNoCharactersAsync()
     {
         var records = await CsvParser.ParseAsync(new StringReader(string.Empty), NewOptions());
 
@@ -116,115 +115,115 @@ public class CsvParserTests
     }
 
     [TestMethod]
-    public async Task ParseAsyncParsesSimpleRecordsAndRowNumbers()
+    public async Task ParseAsyncParsesSimpleRecordsAndRowNumbersAsync()
     {
         var records = await CsvParser.ParseAsync(new StringReader("a,b\nc,d"), NewOptions());
 
         Assert.AreEqual(2, records.Count);
         Assert.AreEqual(1, records[0].RowNumber);
-        CollectionAssert.AreEqual(new[] { "a", "b" }, ToArray(records[0]));
+        AssertFields(records[0], "a", "b");
         Assert.AreEqual(2, records[1].RowNumber);
-        CollectionAssert.AreEqual(new[] { "c", "d" }, ToArray(records[1]));
+        AssertFields(records[1], "c", "d");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHonorsCancellationToken()
+    public async Task ParseAsyncHonorsCancellationTokenAsync()
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() =>
+        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() =>
             CsvParser.ParseAsync(new StringReader("a,b"), NewOptions(), cts.Token));
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesQuoteAtEndOfBufferAndCompletesField()
+    public async Task ParseAsyncHandlesQuoteAtEndOfBufferAndCompletesFieldAsync()
     {
         using var reader = new ChunkedTextReader("\"abc\"", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions());
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "abc" }, ToArray(records[0]));
+        AssertFields(records[0], "abc");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesEscapedQuoteAcrossReadBoundaries()
+    public async Task ParseAsyncHandlesEscapedQuoteAcrossReadBoundariesAsync()
     {
         using var reader = new ChunkedTextReader("\"a\"\"b\"", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions());
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a\"b" }, ToArray(records[0]));
+        AssertFields(records[0], "a\"b");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesQuotedCarriageReturnFollowedByLineFeedAcrossReadBoundaries()
+    public async Task ParseAsyncHandlesQuotedCarriageReturnFollowedByLineFeedAcrossReadBoundariesAsync()
     {
         using var reader = new ChunkedTextReader("\"a\r\nb\"", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions(CsvLineEndingHandling.Allow));
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a\r\nb" }, ToArray(records[0]));
+        AssertFields(records[0], "a\r\nb");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesQuotedCarriageReturnWithoutLineFeedAcrossReadBoundaries()
+    public async Task ParseAsyncHandlesQuotedCarriageReturnWithoutLineFeedAcrossReadBoundariesAsync()
     {
         using var reader = new ChunkedTextReader("\"a\rb\"", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions(CsvLineEndingHandling.Allow));
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a\rb" }, ToArray(records[0]));
+        AssertFields(records[0], "a\rb");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesRecordCarriageReturnFollowedByLineFeedAcrossReadBoundaries()
+    public async Task ParseAsyncHandlesRecordCarriageReturnFollowedByLineFeedAcrossReadBoundariesAsync()
     {
         using var reader = new ChunkedTextReader("a\r\nb", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions());
 
         Assert.AreEqual(2, records.Count);
-        CollectionAssert.AreEqual(new[] { "a" }, ToArray(records[0]));
-        CollectionAssert.AreEqual(new[] { "b" }, ToArray(records[1]));
+        AssertFields(records[0], "a");
+        AssertFields(records[1], "b");
     }
 
     [TestMethod]
-    public async Task ParseAsyncHandlesRecordCarriageReturnWithoutLineFeedAcrossReadBoundaries()
+    public async Task ParseAsyncHandlesRecordCarriageReturnWithoutLineFeedAcrossReadBoundariesAsync()
     {
         using var reader = new ChunkedTextReader("a\rb", 1);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions());
 
         Assert.AreEqual(2, records.Count);
-        CollectionAssert.AreEqual(new[] { "a" }, ToArray(records[0]));
-        CollectionAssert.AreEqual(new[] { "b" }, ToArray(records[1]));
+        AssertFields(records[0], "a");
+        AssertFields(records[1], "b");
     }
 
     [TestMethod]
-    public async Task ParseAsyncReplacesQuotedLineEndings()
+    public async Task ParseAsyncReplacesQuotedLineEndingsAsync()
     {
         using var reader = new ChunkedTextReader("\"a\r\nb\nc\"", 2);
 
         var records = await CsvParser.ParseAsync(reader, NewOptions(CsvLineEndingHandling.Replace, "_"));
 
         Assert.AreEqual(1, records.Count);
-        CollectionAssert.AreEqual(new[] { "a_b_c" }, ToArray(records[0]));
+        AssertFields(records[0], "a_b_c");
     }
 
     [TestMethod]
-    public async Task ParseAsyncRejectsQuotedLineEndings()
+    public async Task ParseAsyncRejectsQuotedLineEndingsAsync()
     {
         await Assert.ThrowsExceptionAsync<CsvInvalidDataException>(() =>
             CsvParser.ParseAsync(new StringReader("\"a\nb\""), NewOptions(CsvLineEndingHandling.Reject)));
     }
 
     [TestMethod]
-    public async Task ParseAsyncThrowsForUnsupportedLineEndingHandling()
+    public async Task ParseAsyncThrowsForUnsupportedLineEndingHandlingAsync()
     {
         var options = NewOptions((CsvLineEndingHandling)999);
 
@@ -233,7 +232,7 @@ public class CsvParserTests
     }
 
     [TestMethod]
-    public async Task ParseAsyncThrowsWhenInputEndsInsideQuotedField()
+    public async Task ParseAsyncThrowsWhenInputEndsInsideQuotedFieldAsync()
     {
         await Assert.ThrowsExceptionAsync<CsvInvalidDataException>(() =>
             CsvParser.ParseAsync(new StringReader("\"abc"), NewOptions()));
@@ -247,12 +246,17 @@ public class CsvParserTests
         };
     }
 
-    private static string[] ToArray(CsvRecord record)
+    private static void AssertFields(CsvRecord record, string value)
     {
-        var values = new string[record.Fields.Count];
-        for (var i = 0; i < record.Fields.Count; i++)
-            values[i] = record.Fields[i];
-        return values;
+        Assert.AreEqual(1, record.Fields.Count);
+        Assert.AreEqual(value, record.Fields[0]);
+    }
+
+    private static void AssertFields(CsvRecord record, string value1, string value2)
+    {
+        Assert.AreEqual(2, record.Fields.Count);
+        Assert.AreEqual(value1, record.Fields[0]);
+        Assert.AreEqual(value2, record.Fields[1]);
     }
 
     private sealed class ChunkedTextReader : TextReader
