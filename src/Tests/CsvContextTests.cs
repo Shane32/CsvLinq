@@ -546,6 +546,42 @@ public class CsvContextTests
         await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => context.SaveAsync(new StringWriter(), new[] { new SampleRow { Name = "Widgets", Quantity = 2 } }, cancellationToken));
     }
 
+    [TestMethod]
+    public async Task AsyncMethodsUseOnReadFileAsyncAndOnWriteFileAsync()
+    {
+        var context = new AsyncHookContext();
+        var csv = "Name,Quantity" + Environment.NewLine + "Widgets,2" + Environment.NewLine;
+
+        var rows = await context.LoadAsync(new StringReader(csv));
+        await context.SaveAsync(new StringWriter(), rows);
+
+        Assert.IsTrue(context.OnReadFileAsyncCalled);
+        Assert.IsFalse(context.OnReadFileCalled);
+        Assert.IsTrue(context.OnWriteFileAsyncCalled);
+        Assert.IsFalse(context.OnWriteFileCalled);
+    }
+
+    [TestMethod]
+    public async Task LoadAsyncUsesBufferedParserReadsAsync()
+    {
+        var csv = new StringBuilder();
+        csv.Append("Name,Quantity");
+        csv.Append(Environment.NewLine);
+        for (var i = 0; i < 2500; i++) {
+            csv.Append("Item");
+            csv.Append(i);
+            csv.Append(',');
+            csv.Append(i);
+            csv.Append(Environment.NewLine);
+        }
+
+        var reader = new CountingTextReader(csv.ToString());
+        var rows = await new SampleContext().LoadAsync(reader);
+
+        Assert.AreEqual(2500, rows.Count);
+        Assert.IsTrue(reader.ReadAsyncCallCount < csv.Length / 10, "Expected buffered reads rather than one read per character.");
+    }
+
 #if NET7_0_OR_GREATER
     [TestMethod]
     public async Task AsyncMethodsPassCancellationTokensToTextReaderAndTextWriterOnNet7OrLaterAsync()
@@ -613,6 +649,12 @@ public class CsvContextTests
             CancellationToken = cancellationToken;
             return base.ReadToEndAsync(cancellationToken);
         }
+
+        public override ValueTask<int> ReadAsync(Memory<char> buffer, CancellationToken cancellationToken = default)
+        {
+            CancellationToken = cancellationToken;
+            return base.ReadAsync(buffer, cancellationToken);
+        }
     }
 
     private sealed class CapturingTextWriter : StringWriter
@@ -636,6 +678,61 @@ public class CsvContextTests
 #endif
     }
 #endif
+
+    private sealed class CountingTextReader : TextReader
+    {
+        private readonly string _text;
+        private int _index;
+
+        public CountingTextReader(string text)
+        {
+            _text = text ?? throw new ArgumentNullException(nameof(text));
+        }
+
+        public int ReadAsyncCallCount { get; private set; }
+
+        public override int Read(char[] buffer, int index, int count)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (index < 0 || index > buffer.Length)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            if (count < 0 || count > buffer.Length - index)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            var charsRemaining = _text.Length - _index;
+            if (charsRemaining <= 0)
+                return 0;
+
+            var charsToCopy = Math.Min(count, charsRemaining);
+            _text.CopyTo(_index, buffer, index, charsToCopy);
+            _index += charsToCopy;
+            return charsToCopy;
+        }
+
+        public override Task<int> ReadAsync(char[] buffer, int index, int count)
+        {
+            ReadAsyncCallCount++;
+            return Task.FromResult(Read(buffer, index, count));
+        }
+
+#if NET7_0_OR_GREATER
+        public override ValueTask<int> ReadAsync(Memory<char> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ReadAsyncCallCount++;
+
+            var charsRemaining = _text.Length - _index;
+            if (charsRemaining <= 0)
+                return ValueTask.FromResult(0);
+
+            var charsToCopy = Math.Min(buffer.Length, charsRemaining);
+            _text.AsMemory(_index, charsToCopy).CopyTo(buffer);
+            _index += charsToCopy;
+            return ValueTask.FromResult(charsToCopy);
+        }
+#endif
+    }
 
     public class SampleRow
     {
@@ -766,6 +863,41 @@ public class CsvContextTests
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.LineEndingsInStrings(CsvLineEndingHandling.Reject);
+        }
+    }
+
+    private sealed class AsyncHookContext : SampleContext
+    {
+        public bool OnReadFileCalled { get; private set; }
+
+        public bool OnReadFileAsyncCalled { get; private set; }
+
+        public bool OnWriteFileCalled { get; private set; }
+
+        public bool OnWriteFileAsyncCalled { get; private set; }
+
+        protected override List<SampleRow> OnReadFile(TextReader reader)
+        {
+            OnReadFileCalled = true;
+            return base.OnReadFile(reader);
+        }
+
+        protected override async Task<List<SampleRow>> OnReadFileAsync(TextReader reader, CancellationToken cancellationToken = default)
+        {
+            OnReadFileAsyncCalled = true;
+            return await base.OnReadFileAsync(reader, cancellationToken);
+        }
+
+        protected override void OnWriteFile(TextWriter writer, IEnumerable<SampleRow> data)
+        {
+            OnWriteFileCalled = true;
+            base.OnWriteFile(writer, data);
+        }
+
+        protected override async Task OnWriteFileAsync(TextWriter writer, IEnumerable<SampleRow> data, CancellationToken cancellationToken = default)
+        {
+            OnWriteFileAsyncCalled = true;
+            await base.OnWriteFileAsync(writer, data, cancellationToken);
         }
     }
 
