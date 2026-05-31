@@ -203,14 +203,7 @@ public abstract class CsvContext<TModel>
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
         cancellationToken.ThrowIfCancellationRequested();
-#if NET7_0_OR_GREATER
-        var text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-#else
-        var text = await reader.ReadToEndAsync().ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-#endif
-        using (var stringReader = new StringReader(text))
-            return OnReadFile(stringReader);
+        return await OnReadFileAsync(reader, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -359,20 +352,10 @@ public abstract class CsvContext<TModel>
         if (writer == null)
             throw new ArgumentNullException(nameof(writer));
         cancellationToken.ThrowIfCancellationRequested();
-        var stringWriter = new StringWriter(CultureInfo.InvariantCulture);
-        OnWriteFile(stringWriter, data);
-        cancellationToken.ThrowIfCancellationRequested();
-#if NET7_0_OR_GREATER
-        await writer.WriteAsync(stringWriter.ToString().AsMemory(), cancellationToken).ConfigureAwait(false);
+        await OnWriteFileAsync(writer, data, cancellationToken).ConfigureAwait(false);
 #if NET8_0_OR_GREATER
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 #else
-        cancellationToken.ThrowIfCancellationRequested();
-        await writer.FlushAsync().ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
-#endif
-#else
-        await writer.WriteAsync(stringWriter.ToString()).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         await writer.FlushAsync().ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
@@ -402,6 +385,39 @@ public abstract class CsvContext<TModel>
         var startRow = Model.Options.HasHeaderRow ? 1 : 0;
         var data = new List<TModel>(Math.Max(0, records.Count - startRow));
         for (var i = startRow; i < records.Count; i++) {
+            var item = OnReadRow(records[i].Fields, records[i].RowNumber, columnMapping);
+            if (item != null)
+                data.Add(item);
+        }
+        return data;
+    }
+
+    /// <summary>
+    /// Asynchronously reads row models from a text reader.
+    /// </summary>
+    /// <param name="reader">The reader containing CSV text.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that returns the loaded row models.</returns>
+    protected virtual async Task<List<TModel>> OnReadFileAsync(TextReader reader, CancellationToken cancellationToken = default)
+    {
+        if (reader == null)
+            throw new ArgumentNullException(nameof(reader));
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var records = await CsvParser.ParseAsync(reader, Model.Options, cancellationToken).ConfigureAwait(false);
+        if (records.Count == 0) {
+            if (!Model.Options.HasHeaderRow)
+                return new List<TModel>();
+            throw new CsvEmptyException();
+        }
+
+        var columnMapping = Model.Options.HasHeaderRow
+            ? CreateColumnMapping(records[0].Fields)
+            : Model.Columns.ToArray();
+        var startRow = Model.Options.HasHeaderRow ? 1 : 0;
+        var data = new List<TModel>(Math.Max(0, records.Count - startRow));
+        for (var i = startRow; i < records.Count; i++) {
+            cancellationToken.ThrowIfCancellationRequested();
             var item = OnReadRow(records[i].Fields, records[i].RowNumber, columnMapping);
             if (item != null)
                 data.Add(item);
@@ -499,6 +515,39 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Asynchronously writes row models as CSV text.
+    /// </summary>
+    /// <param name="writer">The writer to receive CSV text.</param>
+    /// <param name="data">The row models to write.</param>
+    /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous write operation.</returns>
+    protected virtual async Task OnWriteFileAsync(TextWriter writer, IEnumerable<TModel> data, CancellationToken cancellationToken = default)
+    {
+        if (writer == null)
+            throw new ArgumentNullException(nameof(writer));
+        if (data == null)
+            throw new ArgumentNullException(nameof(data));
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var wroteRecord = false;
+        if (Model.Options.HasHeaderRow) {
+            await WriteStringAsync(writer, FormatRecord(Model.Columns.Select(x => x.Name)), cancellationToken).ConfigureAwait(false);
+            wroteRecord = true;
+        }
+
+        foreach (var item in data) {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (wroteRecord)
+                await WriteStringAsync(writer, Model.Options.LineEnding, cancellationToken).ConfigureAwait(false);
+            await WriteStringAsync(writer, FormatRecord(OnWriteRow(item)), cancellationToken).ConfigureAwait(false);
+            wroteRecord = true;
+        }
+
+        if (Model.Options.EndsWithNewLine && wroteRecord)
+            await WriteStringAsync(writer, Model.Options.LineEnding, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Writes a single row model as field values.
     /// </summary>
     /// <param name="data">The row model to write.</param>
@@ -512,6 +561,15 @@ public abstract class CsvContext<TModel>
             var value = GetValue(data, column.Member);
             yield return SerializeValue(value, column);
         }
+    }
+
+    private static Task WriteStringAsync(TextWriter writer, string text, CancellationToken cancellationToken)
+    {
+#if NET7_0_OR_GREATER
+        return writer.WriteAsync(text.AsMemory(), cancellationToken).AsTask();
+#else
+        return writer.WriteAsync(text);
+#endif
     }
 
     /// <summary>
