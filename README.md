@@ -1,5 +1,8 @@
 # Shane32.CsvLinq
 
+[![NuGet](https://img.shields.io/nuget/v/Shane32.CsvLinq.svg)](https://www.nuget.org/packages/Shane32.CsvLinq)
+[![Coverage Status](https://coveralls.io/repos/github/Shane32/CsvLinq/badge.svg?branch=master)](https://coveralls.io/github/Shane32/CsvLinq?branch=master)
+
 CsvLinq maps a single CSV file to a strongly typed list of row models.  You define a context by deriving from
 `CsvContext<TModel>` and configuring the model once in `OnModelCreating`; the context then loads CSV data from a
 file or stream into `List<TModel>`, or saves a list back to a file or stream.
