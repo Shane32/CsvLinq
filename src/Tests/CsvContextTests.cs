@@ -597,6 +597,60 @@ public class CsvContextTests
         Assert.IsTrue(reader.ReadAsyncCallCount < csv.Length / 10, "Expected buffered reads rather than one read per character.");
     }
 
+    [TestMethod]
+    public void NativeTypesSaveUsesDefaultIsoFormats()
+    {
+        var context = new NativeTypesContext();
+        var row = new NativeTypesRow {
+            Token = Guid.Parse("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8"),
+            HappenedAt = new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Utc),
+            HappenedAtOffset = new DateTimeOffset(2024, 5, 8, 13, 45, 12, 345, TimeSpan.FromHours(-7)),
+#if NET6_0_OR_GREATER
+            AvailableOn = new DateOnly(2024, 5, 9),
+#endif
+        };
+
+        var stream = new MemoryStream();
+        context.Save(stream, new[] { row });
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        StringAssert.Contains(csv, "f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8");
+        StringAssert.Contains(csv, "2024-05-08T13:45:12.3450000");
+        StringAssert.DoesNotMatch(csv, new System.Text.RegularExpressions.Regex("2024-05-08T13:45:12.3450000(?:Z|[\\+\\-]\\d{2}:\\d{2})"));
+        StringAssert.Contains(csv, "2024-05-08T13:45:12.3450000-07:00");
+#if NET6_0_OR_GREATER
+        StringAssert.Contains(csv, "2024-05-09");
+#endif
+    }
+
+    [TestMethod]
+    public void NativeTypesLoadParsesDefaultFormatsAndDateTimeKindIsUnspecified()
+    {
+        var csv =
+            "Token,HappenedAt,HappenedAtOffset" +
+#if NET6_0_OR_GREATER
+            ",AvailableOn" +
+#endif
+            Environment.NewLine +
+            "f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00" +
+#if NET6_0_OR_GREATER
+            ",2024-05-09" +
+#endif
+            Environment.NewLine;
+
+        var rows = new NativeTypesContext().Load(new StringReader(csv));
+
+        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual(Guid.Parse("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8"), rows[0].Token);
+        Assert.AreEqual(DateTimeKind.Unspecified, rows[0].HappenedAt.Kind);
+        Assert.AreEqual(new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Unspecified), rows[0].HappenedAt);
+        Assert.AreEqual(new DateTimeOffset(2024, 5, 8, 13, 45, 12, 345, TimeSpan.FromHours(-7)), rows[0].HappenedAtOffset);
+#if NET6_0_OR_GREATER
+        Assert.AreEqual(new DateOnly(2024, 5, 9), rows[0].AvailableOn);
+#endif
+    }
+
 #if NET7_0_OR_GREATER
     [TestMethod]
     public async Task AsyncMethodsPassCancellationTokensToTextReaderAndTextWriterOnNet7OrLaterAsync()
@@ -774,6 +828,19 @@ public class CsvContextTests
 #endif
     }
 
+    private sealed class NativeTypesRow
+    {
+        public Guid Token { get; set; }
+
+        public DateTime HappenedAt { get; set; }
+
+        public DateTimeOffset HappenedAtOffset { get; set; }
+
+#if NET6_0_OR_GREATER
+        public DateOnly AvailableOn { get; set; }
+#endif
+    }
+
     private sealed class StringNullabilityOverrideRow
     {
         public int Id { get; set; }
@@ -819,6 +886,19 @@ public class CsvContextTests
 #if NET6_0_OR_GREATER
             modelBuilder.Column(x => x.AvailableOn).Optional();
             modelBuilder.Column(x => x.StartsAt).Optional();
+#endif
+        }
+    }
+
+    private sealed class NativeTypesContext : CsvContext<NativeTypesRow>
+    {
+        protected override void OnModelCreating(CsvModelBuilder<NativeTypesRow> modelBuilder)
+        {
+            modelBuilder.Column(x => x.Token);
+            modelBuilder.Column(x => x.HappenedAt);
+            modelBuilder.Column(x => x.HappenedAtOffset);
+#if NET6_0_OR_GREATER
+            modelBuilder.Column(x => x.AvailableOn);
 #endif
         }
     }

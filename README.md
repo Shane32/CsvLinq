@@ -70,6 +70,32 @@ supported target frameworks: `string?` receives `null`, while `string` receives 
 metadata is not available, strings are treated as nullable.  Use `.Nullable()` or `.Nullable(false)` to override the
 inferred behavior.
 
+Default serializers/deserializers support these types and formats:
+
+| Type | Default format | Sample |
+| --- | --- | --- |
+| `string` | raw text | `Widgets` |
+| `DateTime` | ISO 8601 date/time (no offset), read as `DateTimeKind.Unspecified` | `2024-05-08T13:45:12.3450000` |
+| `DateTimeOffset` | ISO 8601 round-trip with offset | `2024-05-08T13:45:12.3450000-07:00` |
+| `DateOnly` (`net6.0+`) | ISO 8601 date | `2024-05-08` |
+| `TimeOnly` (`net6.0+`) | ISO 8601 time | `13:45:12.3450000` |
+| `TimeSpan` | constant (`c`) | `1.02:03:04.5000000` |
+| `Guid` | dashed (`D`) | `f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8` |
+| `Uri` | URI string | `https://example.com/items/42` |
+| `bool` | `true`/`false`, `1`/`0`, `Y`/`N`, `Yes`/`No` | `Y` |
+| `enum` | enum name (case-insensitive on read) | `Pending` |
+| numeric primitives (`int`, `decimal`, etc.) | invariant culture | `45.99` |
+
+Common alternative: use a custom formatter for date-only `DateTime` values.
+
+```csharp
+builder.Format<DateTime>(
+    value => DateTime.SpecifyKind(
+        DateTime.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+        DateTimeKind.Unspecified),
+    value => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+```
+
 Per-column serialization can be customized:
 
 ```csharp
