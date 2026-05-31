@@ -113,19 +113,9 @@ public abstract class CsvContext<TModel>
     /// Asynchronously loads CSV rows from a file.
     /// </summary>
     /// <param name="filename">The path to the CSV file.</param>
-    /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(string filename)
-    {
-        return await LoadAsync(filename, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously loads CSV rows from a file.
-    /// </summary>
-    /// <param name="filename">The path to the CSV file.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(string filename, CancellationToken cancellationToken)
+    public virtual async Task<List<TModel>> LoadAsync(string filename, CancellationToken cancellationToken = default)
     {
         if (filename == null)
             throw new ArgumentNullException(nameof(filename));
@@ -140,20 +130,9 @@ public abstract class CsvContext<TModel>
     /// </summary>
     /// <param name="filename">The path to the CSV file.</param>
     /// <param name="encoding">The character encoding to use when reading the file.</param>
-    /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(string filename, Encoding encoding)
-    {
-        return await LoadAsync(filename, encoding, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously loads CSV rows from a file using the specified encoding.
-    /// </summary>
-    /// <param name="filename">The path to the CSV file.</param>
-    /// <param name="encoding">The character encoding to use when reading the file.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(string filename, Encoding encoding, CancellationToken cancellationToken)
+    public virtual async Task<List<TModel>> LoadAsync(string filename, Encoding encoding, CancellationToken cancellationToken = default)
     {
         if (filename == null)
             throw new ArgumentNullException(nameof(filename));
@@ -167,19 +146,9 @@ public abstract class CsvContext<TModel>
     /// Asynchronously loads CSV rows from a stream.
     /// </summary>
     /// <param name="stream">The stream containing CSV data.</param>
-    /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(Stream stream)
-    {
-        return await LoadAsync(stream, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously loads CSV rows from a stream.
-    /// </summary>
-    /// <param name="stream">The stream containing CSV data.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(Stream stream, CancellationToken cancellationToken)
+    public virtual async Task<List<TModel>> LoadAsync(Stream stream, CancellationToken cancellationToken = default)
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
@@ -192,20 +161,9 @@ public abstract class CsvContext<TModel>
     /// </summary>
     /// <param name="stream">The stream containing CSV data.</param>
     /// <param name="encoding">The character encoding to use when reading the stream.</param>
-    /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(Stream stream, Encoding encoding)
-    {
-        return await LoadAsync(stream, encoding, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously loads CSV rows from a stream using the specified encoding.
-    /// </summary>
-    /// <param name="stream">The stream containing CSV data.</param>
-    /// <param name="encoding">The character encoding to use when reading the stream.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken)
+    public virtual async Task<List<TModel>> LoadAsync(Stream stream, Encoding encoding, CancellationToken cancellationToken = default)
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
@@ -217,19 +175,9 @@ public abstract class CsvContext<TModel>
     /// Asynchronously loads CSV rows from a text reader.
     /// </summary>
     /// <param name="reader">The reader containing CSV text.</param>
-    /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(TextReader reader)
-    {
-        return await LoadAsync(reader, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously loads CSV rows from a text reader.
-    /// </summary>
-    /// <param name="reader">The reader containing CSV text.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that returns the loaded row models.</returns>
-    public virtual async Task<List<TModel>> LoadAsync(TextReader reader, CancellationToken cancellationToken)
+    public virtual async Task<List<TModel>> LoadAsync(TextReader reader, CancellationToken cancellationToken = default)
     {
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
@@ -317,20 +265,9 @@ public abstract class CsvContext<TModel>
     /// </summary>
     /// <param name="filename">The path to the CSV file.</param>
     /// <param name="data">The row models to save.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data)
-    {
-        await SaveAsync(filename, data, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves row models to a CSV file.
-    /// </summary>
-    /// <param name="filename">The path to the CSV file.</param>
-    /// <param name="data">The row models to save.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, CancellationToken cancellationToken)
+    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, CancellationToken cancellationToken = default)
     {
         if (filename == null)
             throw new ArgumentNullException(nameof(filename));
@@ -346,21 +283,9 @@ public abstract class CsvContext<TModel>
     /// <param name="filename">The path to the CSV file.</param>
     /// <param name="data">The row models to save.</param>
     /// <param name="encoding">The character encoding to use when writing the file.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, Encoding encoding)
-    {
-        await SaveAsync(filename, data, encoding, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves row models to a CSV file using the specified encoding.
-    /// </summary>
-    /// <param name="filename">The path to the CSV file.</param>
-    /// <param name="data">The row models to save.</param>
-    /// <param name="encoding">The character encoding to use when writing the file.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken)
+    public virtual async Task SaveAsync(string filename, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken = default)
     {
         if (filename == null)
             throw new ArgumentNullException(nameof(filename));
@@ -375,20 +300,9 @@ public abstract class CsvContext<TModel>
     /// </summary>
     /// <param name="stream">The stream to write CSV data to.</param>
     /// <param name="data">The row models to save.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data)
-    {
-        await SaveAsync(stream, data, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves row models to a stream as CSV data.
-    /// </summary>
-    /// <param name="stream">The stream to write CSV data to.</param>
-    /// <param name="data">The row models to save.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, CancellationToken cancellationToken)
+    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, CancellationToken cancellationToken = default)
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
@@ -402,21 +316,9 @@ public abstract class CsvContext<TModel>
     /// <param name="stream">The stream to write CSV data to.</param>
     /// <param name="data">The row models to save.</param>
     /// <param name="encoding">The character encoding to use when writing the stream.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, Encoding encoding)
-    {
-        await SaveAsync(stream, data, encoding, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves row models to a stream as CSV data using the specified encoding.
-    /// </summary>
-    /// <param name="stream">The stream to write CSV data to.</param>
-    /// <param name="data">The row models to save.</param>
-    /// <param name="encoding">The character encoding to use when writing the stream.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken)
+    public virtual async Task SaveAsync(Stream stream, IEnumerable<TModel> data, Encoding encoding, CancellationToken cancellationToken = default)
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
@@ -429,20 +331,9 @@ public abstract class CsvContext<TModel>
     /// </summary>
     /// <param name="writer">The writer to receive CSV text.</param>
     /// <param name="data">The row models to save.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(TextWriter writer, IEnumerable<TModel> data)
-    {
-        await SaveAsync(writer, data, CancellationToken.None).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously saves row models to a text writer as CSV data.
-    /// </summary>
-    /// <param name="writer">The writer to receive CSV text.</param>
-    /// <param name="data">The row models to save.</param>
     /// <param name="cancellationToken">The token used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
-    public virtual async Task SaveAsync(TextWriter writer, IEnumerable<TModel> data, CancellationToken cancellationToken)
+    public virtual async Task SaveAsync(TextWriter writer, IEnumerable<TModel> data, CancellationToken cancellationToken = default)
     {
         if (writer == null)
             throw new ArgumentNullException(nameof(writer));
