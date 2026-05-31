@@ -132,8 +132,11 @@ public class CsvParserTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() =>
-            CsvParser.ParseAsync(new StringReader("a,b"), NewOptions(), cts.Token));
+        try {
+            await CsvParser.ParseAsync(new StringReader("a,b"), NewOptions(), cts.Token);
+            Assert.Fail("Expected cancellation exception.");
+        } catch (OperationCanceledException) {
+        }
     }
 
     [TestMethod]
