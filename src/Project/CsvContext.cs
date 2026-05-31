@@ -31,6 +31,15 @@ public abstract class CsvContext<TModel>
     }
 
     /// <summary>
+    /// Initializes a new CSV context with a pre-built model configuration.
+    /// </summary>
+    /// <param name="model">The model configuration used by this context.</param>
+    protected CsvContext(CsvModel<TModel> model)
+    {
+        Model = model ?? throw new ArgumentNullException(nameof(model));
+    }
+
+    /// <summary>
     /// Gets the model configuration used by this context.
     /// </summary>
     public CsvModel<TModel> Model { get; }

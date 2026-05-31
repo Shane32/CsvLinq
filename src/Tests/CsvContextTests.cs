@@ -51,6 +51,21 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void ModelConstructorBypassesOnModelCreating()
+    {
+        var modelBuilder = new CsvModelBuilder<SampleRow>();
+        modelBuilder.Column(x => x.Name);
+        modelBuilder.Column(x => x.Quantity);
+        var context = new ModelConstructorContext(modelBuilder.Build());
+
+        var rows = context.Load(new StringReader("Name,Quantity" + Environment.NewLine + "Widgets,52" + Environment.NewLine));
+
+        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual("Widgets", rows[0].Name);
+        Assert.AreEqual(52, rows[0].Quantity);
+    }
+
+    [TestMethod]
     public void MissingRequiredColumnThrows()
     {
         var csv = "Name" + Environment.NewLine + "Widgets" + Environment.NewLine;
@@ -749,6 +764,17 @@ public class CsvContextTests
             return int.Parse(value.Substring(2), CultureInfo.InvariantCulture);
 #endif
         }
+    }
+
+    private sealed class ModelConstructorContext : CsvContext<SampleRow>
+    {
+        public ModelConstructorContext(CsvModel<SampleRow> model)
+            : base(model)
+        {
+        }
+
+        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+            => throw new AssertFailedException("OnModelCreating should not be called.");
     }
 
     private sealed class TypeFormatterContext : CsvContext<SampleRow>
