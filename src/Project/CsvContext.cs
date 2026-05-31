@@ -15,18 +15,30 @@ namespace Shane32.CsvLinq;
 /// Provides the base CSV loading and saving behavior for a row model.
 /// </summary>
 /// <typeparam name="TModel">The row model type mapped to CSV records.</typeparam>
-public abstract class CsvContext<TModel>
+public class CsvContext<TModel>
     where TModel : class, new()
 {
     private static readonly Encoding _defaultEncoding = new UTF8Encoding(false);
 
     /// <summary>
+    /// Initializes a new CSV context with a pre-built model configuration.
+    /// </summary>
+    /// <param name="model">The model configuration to use.</param>
+    public CsvContext(CsvModel<TModel> model)
+    {
+        Model = model ?? throw new ArgumentNullException(nameof(model));
+    }
+
+    /// <summary>
     /// Initializes a new CSV context and builds its model configuration.
     /// </summary>
-    protected CsvContext()
+    /// <param name="configureModel">The model configuration action.</param>
+    public CsvContext(Action<CsvModelBuilder<TModel>> configureModel)
     {
+        if (configureModel == null)
+            throw new ArgumentNullException(nameof(configureModel));
         var builder = new CsvModelBuilder<TModel>();
-        OnModelCreating(builder);
+        configureModel(builder);
         Model = builder.Build();
     }
 
@@ -34,12 +46,6 @@ public abstract class CsvContext<TModel>
     /// Gets the model configuration used by this context.
     /// </summary>
     public CsvModel<TModel> Model { get; }
-
-    /// <summary>
-    /// Configures the columns, options, and formatters used by this context.
-    /// </summary>
-    /// <param name="modelBuilder">The model builder to configure.</param>
-    protected abstract void OnModelCreating(CsvModelBuilder<TModel> modelBuilder);
 
     /// <summary>
     /// Loads CSV rows from a file.

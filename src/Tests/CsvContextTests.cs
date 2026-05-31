@@ -389,9 +389,14 @@ public class CsvContextTests
     }
 #endif
 
-    private class SampleContext : CsvContext<SampleRow>
+    private sealed class SampleContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public SampleContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        internal static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
         {
             modelBuilder.SkipEmptyRows();
             modelBuilder.Column(x => x.Name).AlternateName("Full Name");
@@ -411,7 +416,12 @@ public class CsvContextTests
 
     private sealed class StringNullabilityOverrideContext : CsvContext<StringNullabilityOverrideRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<StringNullabilityOverrideRow> modelBuilder)
+        public StringNullabilityOverrideContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<StringNullabilityOverrideRow> modelBuilder)
         {
             modelBuilder.Column(x => x.Id);
             modelBuilder.Column(x => x.NullableName).Nullable();
@@ -422,7 +432,12 @@ public class CsvContextTests
 #if NET6_0_OR_GREATER
     private sealed class InferredStringNullabilityContext : CsvContext<InferredStringNullabilityRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<InferredStringNullabilityRow> modelBuilder)
+        public InferredStringNullabilityContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<InferredStringNullabilityRow> modelBuilder)
         {
             modelBuilder.Column(x => x.Id);
             modelBuilder.Column(x => x.RequiredName);
@@ -432,7 +447,12 @@ public class CsvContextTests
 #else
     private sealed class UnknownStringNullabilityContext : CsvContext<UnknownStringNullabilityRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<UnknownStringNullabilityRow> modelBuilder)
+        public UnknownStringNullabilityContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<UnknownStringNullabilityRow> modelBuilder)
         {
             modelBuilder.Column(x => x.Id);
             modelBuilder.Column(x => x.Name);
@@ -440,36 +460,56 @@ public class CsvContextTests
     }
 #endif
 
-    private sealed class NoFinalNewLineContext : SampleContext
+    private sealed class NoFinalNewLineContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public NoFinalNewLineContext()
+            : base(ConfigureModel)
         {
-            base.OnModelCreating(modelBuilder);
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
+        {
+            SampleContext.ConfigureModel(modelBuilder);
             modelBuilder.EndsWithNewLine(false);
         }
     }
 
-    private sealed class ReplaceLineEndingsContext : SampleContext
+    private sealed class ReplaceLineEndingsContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public ReplaceLineEndingsContext()
+            : base(ConfigureModel)
         {
-            base.OnModelCreating(modelBuilder);
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
+        {
+            SampleContext.ConfigureModel(modelBuilder);
             modelBuilder.LineEndingsInStrings(CsvLineEndingHandling.Replace);
         }
     }
 
-    private sealed class RejectLineEndingsContext : SampleContext
+    private sealed class RejectLineEndingsContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public RejectLineEndingsContext()
+            : base(ConfigureModel)
         {
-            base.OnModelCreating(modelBuilder);
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
+        {
+            SampleContext.ConfigureModel(modelBuilder);
             modelBuilder.LineEndingsInStrings(CsvLineEndingHandling.Reject);
         }
     }
 
     private sealed class CustomColumnContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public CustomColumnContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
         {
             modelBuilder.Column(x => x.Name);
             modelBuilder.Column(x => x.Quantity)
@@ -489,7 +529,12 @@ public class CsvContextTests
 
     private sealed class TypeFormatterContext : CsvContext<SampleRow>
     {
-        protected override void OnModelCreating(CsvModelBuilder<SampleRow> modelBuilder)
+        public TypeFormatterContext()
+            : base(ConfigureModel)
+        {
+        }
+
+        private static void ConfigureModel(CsvModelBuilder<SampleRow> modelBuilder)
         {
             modelBuilder.Format<decimal>(
                 value => decimal.Parse(value.TrimStart('$'), System.Globalization.CultureInfo.InvariantCulture),

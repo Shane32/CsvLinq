@@ -1,8 +1,8 @@
 # Shane32.CsvLinq
 
-CsvLinq maps a single CSV file to a strongly typed list of row models.  You define a context by deriving from
-`CsvContext<TModel>` and configuring the model once in `OnModelCreating`; the context then loads CSV data from a
-file or stream into `List<TModel>`, or saves a list back to a file or stream.
+CsvLinq maps a single CSV file to a strongly typed list of row models.  You define a context by creating
+`CsvContext<TModel>` with a model configuration delegate; the context then loads CSV data from a file or stream into
+`List<TModel>`, or saves a list back to a file or stream.
 
 The library targets `netstandard2.0` and has no runtime package dependencies.
 
@@ -18,28 +18,22 @@ public class InvoiceLine
     public string Notes { get; set; }
 }
 
-public class InvoiceLineCsv : CsvContext<InvoiceLine>
-{
-    protected override void OnModelCreating(CsvModelBuilder<InvoiceLine> builder)
-    {
-        builder.Column(x => x.Date);
-        builder.Column(x => x.Quantity, "Qty");
-        builder.Column(x => x.Description)
-            .AlternateName("Desc");
-        builder.Column(x => x.Amount);
-        builder.Column(x => x.Notes)
-            .Optional();
+var csv = new CsvContext<InvoiceLine>(builder => {
+    builder.Column(x => x.Date);
+    builder.Column(x => x.Quantity, "Qty");
+    builder.Column(x => x.Description)
+        .AlternateName("Desc");
+    builder.Column(x => x.Amount);
+    builder.Column(x => x.Notes)
+        .Optional();
 
-        builder.SkipEmptyRows();
-    }
-}
+    builder.SkipEmptyRows();
+});
 ```
 
 Read and write data directly:
 
 ```csharp
-var csv = new InvoiceLineCsv();
-
 List<InvoiceLine> rows = csv.Load("invoice.csv");
 
 rows.Add(new InvoiceLine {
