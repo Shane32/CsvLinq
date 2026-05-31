@@ -566,7 +566,7 @@ public abstract class CsvContext<TModel>
     private static Task WriteStringAsync(TextWriter writer, string text, CancellationToken cancellationToken)
     {
 #if NET7_0_OR_GREATER
-        return writer.WriteAsync(text.AsMemory(), cancellationToken).AsTask();
+        return writer.WriteAsync(text.AsMemory(), cancellationToken);
 #else
         return writer.WriteAsync(text);
 #endif
