@@ -616,7 +616,7 @@ public class CsvContextTests
         var csv = new StreamReader(stream).ReadToEnd();
 
         StringAssert.Contains(csv, "f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8");
-        StringAssert.Contains(csv, ",2024-05-08T13:45:12.3450000,2024-05-08T13:45:12.3450000-07:00");
+        StringAssert.Contains(csv, ",2024-05-08T13:45:12.345,2024-05-08T13:45:12.3450000-07:00");
 #if NET6_0_OR_GREATER
         StringAssert.Contains(csv, "2024-05-09");
 #endif

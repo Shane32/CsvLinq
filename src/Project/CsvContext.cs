@@ -629,7 +629,7 @@ public abstract class CsvContext<TModel>
             dataType = underlyingType;
 
         if (dataType == typeof(DateTime))
-            return ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss.fffffff", CultureInfo.InvariantCulture);
+            return ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture);
         if (dataType == typeof(DateTimeOffset))
             return ((DateTimeOffset)value).ToString("O", CultureInfo.InvariantCulture);
 #if NET6_0_OR_GREATER

@@ -75,7 +75,7 @@ Default serializers/deserializers support these types and formats:
 | Type | Default format | Sample |
 | --- | --- | --- |
 | `string` | raw text | `Widgets` |
-| `DateTime` | ISO 8601 date/time (no offset), read as `DateTimeKind.Unspecified` (any input offset is ignored) | `2024-05-08T13:45:12.3450000` |
+| `DateTime` | ISO 8601 date/time (no offset), read as `DateTimeKind.Unspecified` (any input offset is ignored) | `2024-05-08T13:45:12.345` |
 | `DateTimeOffset` | ISO 8601 round-trip with offset | `2024-05-08T13:45:12.3450000-07:00` |
 | `DateOnly` (`net6.0+`) | ISO 8601 date | `2024-05-08` |
 | `TimeOnly` (`net6.0+`) | ISO 8601 time | `13:45:12.3450000` |
