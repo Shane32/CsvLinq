@@ -146,6 +146,33 @@ public class CsvContextTests
     }
 
     [TestMethod]
+    public void SaveCanOmitHeaderRow()
+    {
+        var context = new HeaderlessContext();
+        var stream = new MemoryStream();
+
+        context.Save(stream, new[] { new HeaderlessRow { Name = "Widgets", Quantity = 2 } });
+        stream.Position = 0;
+        var csv = new StreamReader(stream).ReadToEnd();
+
+        Assert.AreEqual("Widgets,2" + Environment.NewLine, csv);
+    }
+
+    [TestMethod]
+    public void LoadCanReadWithoutHeaderRow()
+    {
+        var rows = new HeaderlessContext().Load(ToStream(
+            "Widgets,2" + Environment.NewLine +
+            "Bolts,5" + Environment.NewLine));
+
+        Assert.AreEqual(2, rows.Count);
+        Assert.AreEqual("Widgets", rows[0].Name);
+        Assert.AreEqual(2, rows[0].Quantity);
+        Assert.AreEqual("Bolts", rows[1].Name);
+        Assert.AreEqual(5, rows[1].Quantity);
+    }
+
+    [TestMethod]
     public void LineEndingsInFieldsCanBeReplaced()
     {
         var context = new ReplaceLineEndingsContext();
@@ -497,6 +524,23 @@ public class CsvContextTests
             modelBuilder.Column(x => x.Name);
             modelBuilder.Column(x => x.Quantity);
             modelBuilder.Column(x => x.Amount).Optional();
+        }
+    }
+
+    private sealed class HeaderlessRow
+    {
+        public string Name { get; set; } = "";
+
+        public int Quantity { get; set; }
+    }
+
+    private sealed class HeaderlessContext : CsvContext<HeaderlessRow>
+    {
+        protected override void OnModelCreating(CsvModelBuilder<HeaderlessRow> modelBuilder)
+        {
+            modelBuilder.OmitHeaderRow();
+            modelBuilder.Column(x => x.Name);
+            modelBuilder.Column(x => x.Quantity);
         }
     }
 }

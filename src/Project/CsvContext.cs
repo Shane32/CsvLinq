@@ -308,13 +308,18 @@ public abstract class CsvContext<TModel>
             throw new ArgumentNullException(nameof(reader));
 
         var records = CsvParser.Parse(reader.ReadToEnd(), Model.Options);
-        if (records.Count == 0)
+        if (records.Count == 0) {
+            if (!Model.Options.HasHeaderRow)
+                return new List<TModel>();
             throw new CsvEmptyException();
+        }
 
-        var header = records[0].Fields;
-        var columnMapping = CreateColumnMapping(header);
-        var data = new List<TModel>(Math.Max(0, records.Count - 1));
-        for (var i = 1; i < records.Count; i++) {
+        var columnMapping = Model.Options.HasHeaderRow
+            ? CreateColumnMapping(records[0].Fields)
+            : Model.Columns.ToArray();
+        var startRow = Model.Options.HasHeaderRow ? 1 : 0;
+        var data = new List<TModel>(Math.Max(0, records.Count - startRow));
+        for (var i = startRow; i < records.Count; i++) {
             var item = OnReadRow(records[i].Fields, records[i].RowNumber, columnMapping);
             if (item != null)
                 data.Add(item);
@@ -399,9 +404,9 @@ public abstract class CsvContext<TModel>
         if (data == null)
             throw new ArgumentNullException(nameof(data));
 
-        var records = new List<string> {
-            FormatRecord(Model.Columns.Select(x => x.Name))
-        };
+        var records = new List<string>();
+        if (Model.Options.HasHeaderRow)
+            records.Add(FormatRecord(Model.Columns.Select(x => x.Name)));
 
         foreach (var item in data)
             records.Add(FormatRecord(OnWriteRow(item)));
