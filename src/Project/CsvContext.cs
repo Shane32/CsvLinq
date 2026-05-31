@@ -45,8 +45,6 @@ public abstract class CsvContext<TModel>
     {
         get
         {
-            if (_model != null)
-                return _model;
             lock (_modelLock) {
                 return _model ??= BuildModel();
             }
