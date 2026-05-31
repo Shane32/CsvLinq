@@ -82,7 +82,7 @@ Default serializers/deserializers support these types and formats:
 | `TimeSpan` | constant (`c`) | `1.02:03:04.5000000` |
 | `Guid` | dashed (`D`) | `f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8` |
 | `Uri` | URI string | `https://example.com/items/42` |
-| `bool` | `true`/`false`, `1`/`0`, `Y`/`N`, `Yes`/`No` | `Y` |
+| `bool` | `true`/`false`, `1`/`0`, `Y`/`N`, `Yes`/`No` | `True` |
 | `enum` | enum name (case-insensitive on read) | `Pending` |
 | numeric primitives (`int`, `decimal`, etc.) | invariant culture | `45.99` |
 
