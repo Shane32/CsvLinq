@@ -602,11 +602,29 @@ public class CsvContextTests
     {
         var context = new NativeTypesContext();
         var row = new NativeTypesRow {
+            Name = "Widgets",
             Token = Guid.Parse("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8"),
             HappenedAt = new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Utc),
             HappenedAtOffset = new DateTimeOffset(2024, 5, 8, 13, 45, 12, 345, TimeSpan.FromHours(-7)),
+            Duration = new TimeSpan(1, 2, 3, 4, 500),
+            Link = new Uri("https://example.com/items/42"),
+            Enabled = true,
+            State = NativeTypesState.Pending,
+            ByteValue = 200,
+            SByteValue = -100,
+            ShortValue = -12345,
+            UShortValue = 54321,
+            IntValue = -2000000000,
+            UIntValue = 4000000000U,
+            LongValue = -9000000000000000000L,
+            ULongValue = 18000000000000000000UL,
+            SingleValue = 3.5f,
+            DoubleValue = -12345.25d,
+            DecimalValue = 45.99m,
 #if NET6_0_OR_GREATER
+            HalfValue = (Half)1.5f,
             AvailableOn = new DateOnly(2024, 5, 9),
+            StartsAt = new TimeOnly(13, 45, 12, 345),
 #endif
         };
 
@@ -614,11 +632,33 @@ public class CsvContextTests
         context.Save(stream, new[] { row });
         stream.Position = 0;
         var csv = new StreamReader(stream).ReadToEnd();
+        var lines = csv.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+        Assert.AreEqual(2, lines.Length);
+        var values = lines[1].Split(',');
 
-        StringAssert.Contains(csv, "f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8");
-        StringAssert.Contains(csv, ",2024-05-08T13:45:12.345,2024-05-08T13:45:12.3450000-07:00");
+        Assert.AreEqual("Widgets", values[0]);
+        Assert.AreEqual("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8", values[1]);
+        Assert.AreEqual("2024-05-08T13:45:12.345", values[2]);
+        Assert.AreEqual("2024-05-08T13:45:12.3450000-07:00", values[3]);
+        Assert.AreEqual("1.02:03:04.5000000", values[4]);
+        Assert.AreEqual("https://example.com/items/42", values[5]);
+        Assert.AreEqual("True", values[6]);
+        Assert.AreEqual("Pending", values[7]);
+        Assert.AreEqual("200", values[8]);
+        Assert.AreEqual("-100", values[9]);
+        Assert.AreEqual("-12345", values[10]);
+        Assert.AreEqual("54321", values[11]);
+        Assert.AreEqual("-2000000000", values[12]);
+        Assert.AreEqual("4000000000", values[13]);
+        Assert.AreEqual("-9000000000000000000", values[14]);
+        Assert.AreEqual("18000000000000000000", values[15]);
+        Assert.AreEqual("3.5", values[16]);
+        Assert.AreEqual("-12345.25", values[17]);
+        Assert.AreEqual("45.99", values[18]);
 #if NET6_0_OR_GREATER
-        StringAssert.Contains(csv, "2024-05-09");
+        Assert.AreEqual("1.5", values[19]);
+        Assert.AreEqual("2024-05-09", values[20]);
+        Assert.AreEqual("13:45:12.3450000", values[21]);
 #endif
     }
 
@@ -626,26 +666,44 @@ public class CsvContextTests
     public void NativeTypesLoadParsesDefaultFormatsAndDateTimeKindIsUnspecified()
     {
         var csv =
-            "Token,HappenedAt,HappenedAtOffset" +
+            "Name,Token,HappenedAt,HappenedAtOffset,Duration,Link,Enabled,State,ByteValue,SByteValue,ShortValue,UShortValue,IntValue,UIntValue,LongValue,ULongValue,SingleValue,DoubleValue,DecimalValue" +
 #if NET6_0_OR_GREATER
-            ",AvailableOn" +
+            ",HalfValue,AvailableOn,StartsAt" +
 #endif
             Environment.NewLine +
-            "f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00" +
+            "Widgets,f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,Yes,pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
 #if NET6_0_OR_GREATER
-            ",2024-05-09" +
+            ",1.5,2024-05-09,13:45:12.3450000" +
 #endif
             Environment.NewLine;
 
         var rows = new NativeTypesContext().Load(new StringReader(csv));
 
         Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual("Widgets", rows[0].Name);
         Assert.AreEqual(Guid.Parse("f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8"), rows[0].Token);
         Assert.AreEqual(DateTimeKind.Unspecified, rows[0].HappenedAt.Kind);
         Assert.AreEqual(new DateTime(2024, 5, 8, 13, 45, 12, 345, DateTimeKind.Unspecified), rows[0].HappenedAt);
         Assert.AreEqual(new DateTimeOffset(2024, 5, 8, 13, 45, 12, 345, TimeSpan.FromHours(-7)), rows[0].HappenedAtOffset);
+        Assert.AreEqual(new TimeSpan(1, 2, 3, 4, 500), rows[0].Duration);
+        Assert.AreEqual(new Uri("https://example.com/items/42"), rows[0].Link);
+        Assert.AreEqual(true, rows[0].Enabled);
+        Assert.AreEqual(NativeTypesState.Pending, rows[0].State);
+        Assert.AreEqual((byte)200, rows[0].ByteValue);
+        Assert.AreEqual((sbyte)-100, rows[0].SByteValue);
+        Assert.AreEqual((short)-12345, rows[0].ShortValue);
+        Assert.AreEqual((ushort)54321, rows[0].UShortValue);
+        Assert.AreEqual(-2000000000, rows[0].IntValue);
+        Assert.AreEqual(4000000000U, rows[0].UIntValue);
+        Assert.AreEqual(-9000000000000000000L, rows[0].LongValue);
+        Assert.AreEqual(18000000000000000000UL, rows[0].ULongValue);
+        Assert.AreEqual(3.5f, rows[0].SingleValue);
+        Assert.AreEqual(-12345.25d, rows[0].DoubleValue);
+        Assert.AreEqual(45.99m, rows[0].DecimalValue);
 #if NET6_0_OR_GREATER
+        Assert.AreEqual((Half)1.5f, rows[0].HalfValue);
         Assert.AreEqual(new DateOnly(2024, 5, 9), rows[0].AvailableOn);
+        Assert.AreEqual(new TimeOnly(13, 45, 12, 345), rows[0].StartsAt);
 #endif
     }
 
@@ -826,16 +884,58 @@ public class CsvContextTests
 #endif
     }
 
+    private enum NativeTypesState
+    {
+        Pending,
+        Complete,
+    }
+
     private sealed class NativeTypesRow
     {
+        public string Name { get; set; } = "";
+
         public Guid Token { get; set; }
 
         public DateTime HappenedAt { get; set; }
 
         public DateTimeOffset HappenedAtOffset { get; set; }
 
+        public TimeSpan Duration { get; set; }
+
+        public Uri Link { get; set; } = new Uri("https://example.com");
+
+        public bool Enabled { get; set; }
+
+        public NativeTypesState State { get; set; }
+
+        public byte ByteValue { get; set; }
+
+        public sbyte SByteValue { get; set; }
+
+        public short ShortValue { get; set; }
+
+        public ushort UShortValue { get; set; }
+
+        public int IntValue { get; set; }
+
+        public uint UIntValue { get; set; }
+
+        public long LongValue { get; set; }
+
+        public ulong ULongValue { get; set; }
+
+        public float SingleValue { get; set; }
+
+        public double DoubleValue { get; set; }
+
+        public decimal DecimalValue { get; set; }
+
 #if NET6_0_OR_GREATER
+        public Half HalfValue { get; set; }
+
         public DateOnly AvailableOn { get; set; }
+
+        public TimeOnly StartsAt { get; set; }
 #endif
     }
 
@@ -892,11 +992,29 @@ public class CsvContextTests
     {
         protected override void OnModelCreating(CsvModelBuilder<NativeTypesRow> modelBuilder)
         {
+            modelBuilder.Column(x => x.Name);
             modelBuilder.Column(x => x.Token);
             modelBuilder.Column(x => x.HappenedAt);
             modelBuilder.Column(x => x.HappenedAtOffset);
+            modelBuilder.Column(x => x.Duration);
+            modelBuilder.Column(x => x.Link);
+            modelBuilder.Column(x => x.Enabled);
+            modelBuilder.Column(x => x.State);
+            modelBuilder.Column(x => x.ByteValue);
+            modelBuilder.Column(x => x.SByteValue);
+            modelBuilder.Column(x => x.ShortValue);
+            modelBuilder.Column(x => x.UShortValue);
+            modelBuilder.Column(x => x.IntValue);
+            modelBuilder.Column(x => x.UIntValue);
+            modelBuilder.Column(x => x.LongValue);
+            modelBuilder.Column(x => x.ULongValue);
+            modelBuilder.Column(x => x.SingleValue);
+            modelBuilder.Column(x => x.DoubleValue);
+            modelBuilder.Column(x => x.DecimalValue);
 #if NET6_0_OR_GREATER
+            modelBuilder.Column(x => x.HalfValue);
             modelBuilder.Column(x => x.AvailableOn);
+            modelBuilder.Column(x => x.StartsAt);
 #endif
         }
     }

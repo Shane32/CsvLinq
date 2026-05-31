@@ -598,6 +598,8 @@ public abstract class CsvContext<TModel>
             return DateOnly.ParseExact(value, "O", CultureInfo.InvariantCulture);
         if (dataType == typeof(TimeOnly))
             return TimeOnly.ParseExact(value, "O", CultureInfo.InvariantCulture);
+        if (dataType == typeof(Half))
+            return Half.Parse(value, CultureInfo.InvariantCulture);
 #endif
         if (dataType == typeof(TimeSpan))
             return TimeSpan.Parse(value, CultureInfo.InvariantCulture);
