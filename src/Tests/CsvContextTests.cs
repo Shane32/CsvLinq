@@ -484,8 +484,6 @@ public class CsvContextTests
         Assert.AreEqual("caf\u00e9", rows[0].Name);
     }
 
-
-
     [TestMethod]
     public async Task LoadAndSaveUsesTextReaderAndTextWriterAsync()
     {
