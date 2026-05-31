@@ -157,7 +157,11 @@ public sealed class CsvModelBuilder<TModel>
         _columnLookup.Add(name.Trim(), column);
     }
 
-    internal CsvModel<TModel> Build()
+    /// <summary>
+    /// Builds and returns a <see cref="CsvModel{TModel}" /> using the columns, formatters, and options configured on this builder.
+    /// </summary>
+    /// <returns>The configured CSV model.</returns>
+    public CsvModel<TModel> Build()
     {
         if (Options.LineEnding == null)
             throw new InvalidOperationException("LineEnding cannot be null");
