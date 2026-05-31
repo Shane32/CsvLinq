@@ -665,22 +665,15 @@ public class CsvContextTests
     [TestMethod]
     public void NativeTypesLoadParsesDefaultFormatsAndDateTimeKindIsUnspecified()
     {
-        var csv =
-            "Name,Token,HappenedAt,HappenedAtOffset,Duration,Link,Enabled,State,ByteValue,SByteValue,ShortValue,UShortValue,IntValue,UIntValue,LongValue,ULongValue,SingleValue,DoubleValue,DecimalValue" +
+        var header = "Name,Token,HappenedAt,HappenedAtOffset,Duration,Link,Enabled,State,ByteValue,SByteValue,ShortValue,UShortValue,IntValue,UIntValue,LongValue,ULongValue,SingleValue,DoubleValue,DecimalValue";
+        var row1 = "Widgets,f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.345,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,True,Pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99";
+        var row2 = "Gadgets,6b4fef27-a72f-4e25-9678-c89fd43f86a7,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,Yes,pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99";
 #if NET6_0_OR_GREATER
-            ",HalfValue,AvailableOn,StartsAt" +
+        header += ",HalfValue,AvailableOn,StartsAt";
+        row1 += ",1.5,2024-05-09,13:45:12.3450000";
+        row2 += ",1.5,2024-05-09,13:45:12.3450000";
 #endif
-            Environment.NewLine +
-            "Widgets,f1dc7e7d-d63e-4279-8dfd-cecb6e26cda8,2024-05-08T13:45:12.345,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,True,Pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
-#if NET6_0_OR_GREATER
-            ",1.5,2024-05-09,13:45:12.3450000" +
-#endif
-            Environment.NewLine +
-            "Gadgets,6b4fef27-a72f-4e25-9678-c89fd43f86a7,2024-05-08T13:45:12.3450000+02:00,2024-05-08T13:45:12.3450000-07:00,1.02:03:04.5000000,https://example.com/items/42,Yes,pending,200,-100,-12345,54321,-2000000000,4000000000,-9000000000000000000,18000000000000000000,3.5,-12345.25,45.99" +
-#if NET6_0_OR_GREATER
-            ",1.5,2024-05-09,13:45:12.3450000" +
-#endif
-            Environment.NewLine;
+        var csv = string.Join(Environment.NewLine, new[] { header, row1, row2, "" });
 
         var rows = new NativeTypesContext().Load(new StringReader(csv));
 
