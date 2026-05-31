@@ -86,16 +86,6 @@ Default serializers/deserializers support these types and formats:
 | `enum` | enum name (case-insensitive on read) | `Pending` |
 | numeric primitives (`int`, `decimal`, etc.) | invariant culture | `45.99` |
 
-Common alternative: use a custom formatter for date-only `DateTime` values.
-
-```csharp
-builder.Format<DateTime>(
-    value => DateTime.SpecifyKind(
-        DateTime.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture),
-        DateTimeKind.Unspecified),
-    value => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-```
-
 Per-column serialization can be customized:
 
 ```csharp
